@@ -1,0 +1,26 @@
+{
+	"apiVersion": 2,
+	"name": "woocommerce/eu-vat-number",
+	"version": "1.0.0",
+	"title": "EU VAT Number",
+	"parent": [ "woocommerce/checkout-fields-block" ],
+	"category": "woocommerce",
+	"icon": "cart",
+	"description": "The EU VAT Number extension lets you collect and validate EU VAT numbers during checkout to identify B2B transactions verses B2C. IP Addresses can also be validated to ensure they match the billing address. EU businesses with a valid VAT number can have their VAT removed prior to payment.",
+	"supports": {
+		"html": false
+	},
+	"textdomain": "woocommerce-eu-vat-number",
+	"editorScript": "file:./build/index.js",
+	"editorStyle": "file:./build/index.css",
+	"style": "file:./build/index.css",
+	"attributes": {
+		"lock": {
+			"type": "object",
+			"default": {
+				"remove": true,
+				"move": false
+			}
+		}
+	}	
+}

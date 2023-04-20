@@ -1,0 +1,345 @@
+*** EU VAT Number Changelog ***
+
+2023-04-03 - version 2.8.3
+* Fix - Fatal errors if SOAP extension is not installed.
+* Fix - Plugin functions are not available when dependency requirements are not met.
+
+2023-03-13 - version 2.8.2
+* Fix – Ensure WC Blocks compatibility scripts are only loaded when on a page containing WC Blocks.
+* Dev – Bump PHP minimum supported version from 7.0 to 7.2.
+* Dev – Bump WooCommerce minimum supported version from 6.0 to 6.8.
+* Dev – Bump WooCommerce “tested up to” version 7.4.
+* Dev – Resolve deprecation warning in SCSS source.
+
+2023-02-27 - version 2.8.1
+* Fix – UK VAT number validation issue.
+* Tweak – Bump WooCommerce tested up to 7.3.0
+
+2022-12-01 - version 2.8.0
+* Add – Ability to Collect and Validate Evidence in the WooCommerce Blocks Checkout.
+* Add – Add the EU VAT Number block as a form step in the WooCommerce Blocks Checkout.
+* Add – Support for High-performance Order Storage (“HPOS”) (formerly known as Custom Order Tables, “COT”).
+* Add – Output a zero tax line item with the reason why it’s zero in both the order email and invoice.
+* Add – New filter wc_eu_vat_number_zero_tax_reason used to modify the zero tax reason text.
+* Add – Implement support for automatic translation files delivery.
+* Add – Declare support for High-performance Order Systems (“HPOS”).
+* Fix – Issue with updating VAT code from the My Account screen.
+* Fix – Errors in PHP Coding Standards.
+* Fix – Checkout VAT field validation on failure.
+* Tweak – WC tested up to 7.1.
+* Tweak – Bump minimum WP version to 5.6.
+* Tweak – Bump minimum PHP version to 7.0.
+* Tweak – Bump minimum WC version to 6.0.
+* Tweak – Simplified notices text.
+* Dev – Update node version from 8.9.3 to 16.13.0.
+* Dev – Update npm version from 5.5.1 to 8.0.0.
+
+2022-11-01 - version 2.7.0
+* Add - Support for checking out with a EU vat number field using the checkout block from WooCommerce Blocks.
+
+2022-09-06 - version 2.6.0
+* Add - Support for UK VAT Number validation (using UK VAT Number API).
+* Fix - VAT validation when the field is empty.
+
+2022-07-25 - version 2.5.0
+* Fix – Add float Type Casting to refunded tax to prevent the “non-numeric value” warning.
+* Fix – Display product price without VAT if a valid VAT number is saved in the customer account.
+* Update – Display a more specific message for error in connect to vies server from local environments.
+
+2022-06-20 - version 2.4.3
+* Tweak - Bump Tested up to
+
+2022-02-22 - version 2.4.2
+* New - Add support for Subscriptions with WooCommerce Payments.
+* Fix - Removes VAT charge from the scheduled orders.
+* Fix - PHP notice when placing an order with no VAT number.
+* Fix - "Failed Validation Handling" setting not working properly for manual admin order.
+* Fix - POT file not included in release zip.
+* Fix - Apply EU VAT straight away when creating a manual order.
+
+2021-08-04 - version 2.4.1
+* Fix - Rendering the VAT field when store is selling to only one country. PR#207
+* Fix - Changing the country from non-EU to EU doesn't display the VAT field. PR#207
+* Fix - Compatibility with WooCommerce One Page Checkout. PR#208
+* Fix - VAT field not displayed on WooCommerce Subscriptions switch orders. PR#208
+* Fix - VAT validation for WooCommerce Subscripitons products with a free trial. PR#208
+
+2021-07-22 - version 2.4.0
+* New - [Brexit] Add Northern Ireland (XI) VAT validation and remove GB VAT validation. PR#202
+* Fix - Properly display error messages if server IP is blocked by VIES. PR#202
+* Fix - VAT Validation on orders created via WP Admin dashboard. PR#202
+* Fix - Support for checkout field editor plugins. PR#200
+* Fix - Issues with My Account -> VAT Number endpoint when My Account is set as homepage. PR#204
+
+2021-04-07 - version 2.3.26
+* Update - Fixes documentation and support links.
+* Fix    - Trigger VAT number validation only on change.
+* Fix    - Properly handle EU VAT privacy data erasure.
+* Update - JS updated for jQuery 3 compatibility.
+* Fix    - Modified VIES API request to use HTTPS
+
+2020-09-30 - version 2.3.25
+* Fix   - VAT Number required when B2B not enabled.
+
+2020-09-30 - version 2.3.24
+* Fix   - Automatically populate VAT Number at checkout if saved to user profile.
+* Fix   - VAT Number showing as required for non-EU countries when switching billing country.
+* Tweak - Lower VAT Number transient expiration time from 7 days to 1 day.
+* Tweak - Improve error message when saving VAT Number on My Account if billing address is missing.
+
+2020-08-19 - version 2.3.23
+* Tweak - WordPress 5.5 compatibility.
+
+2020-07-14 - version 2.3.22
+* Fix - PHP error on checkout page if order total is zero.
+
+2020-07-01 - version 2.3.21
+* Add - VAT number field to user/customer profile.
+* Add - VAT number of a customer when adding a new order from admin.
+* Fix - VAT not validating correctly in checkout in all acceptance types.
+* Tweak - Use EL country code for Greece when showing tax reports.
+* Tweak - Treat Isle of Man the same as UK in regards to tax exemption.
+
+2020-06-10 - version 2.3.20
+* Tweak - WC 4.2 compatibility.
+
+2020-04-29 - version 2.3.19
+* Tweak - Remove legacy code.
+* Tweak - WC 4.0 compatibility.
+* Fix   - VAT incorrectly being removed when Recalculate button is clicked on the order.
+
+2020-02-04 - version 2.3.18
+* Fix - Use proper escaping for attributes.
+
+2020-01-13 - version 2.3.17
+* Tweak - WC 3.9 compatibility.
+
+2019-11-05 - version 2.3.16
+* Fix   - Update WC header.
+
+2019-11-05 - version 2.3.15
+* Tweak - WC 3.8 compatibility.
+
+2019-08-08 - version 2.3.14
+* Fix   - Adding/editing VAT in admin new order or edit order not updating VAT amount.
+* Tweak - WC 3.7 compatibility.
+
+2019-04-16 - version 2.3.13
+* Tweak - WC 3.6 compatibility.
+
+2019-01-07 - version 2.3.12
+* Fix - Always show VAT number field if b2b is enabled.
+
+2018-09-26 - version 2.3.11
+* Update - WC tested up to 3.5
+
+2018-08-21 - version 2.3.10
+* Fix - Re-deployment to fix VAT numbers being removed when order is saved.
+
+2018-08-21 - version 2.3.9
+* Fix - VAT numbers were removed when order is saved.
+
+2018-08-02 - version 2.3.8
+* Fix - Properly handle shipping address depending on 'Ship to different address' checked or not.
+
+2018-05-22 - version 2.3.7
+* Fix    - PHP deprecation notice for 'parse_str'.
+* Fix    - Increasing timeout for SOAP requests.
+* Fix    - Show SOAP requirement notice and disable VAT lookups if needed.
+* Add    - Added woocommerce_eu_vat_number_soap_parameters filter for modifying SOAP request parameters.
+* Fix    - Use proper parse_str format in ajax_update_checkout_totals.
+* Update - WC tested up to 3.4
+* Update - Privacy policy notification.
+* Update - Export/erasure hooks added.
+
+2018-02-05 - version 2.3.6
+* Fix - Cached VAT lookups not applying proper exemptions
+* New - Adds a filter to be able to control which countries charge VAT, via code.
+
+2018-01-17 - version 2.3.5
+* Fix - Properly handle shipping address depending on 'Ship to different address' checked or not.
+* Fix - Make SOAP request to VIES directly to help prevent IPs being blocked.
+
+2017-12-13 - version 2.3.4
+* Fix - WC 3.3 compatibility.
+
+2017-10-09 - version 2.3.3
+* Fix - Issue where exempt check uses both shipping and billing country for matching base country.
+
+2017-08-27 - version 2.3.2
+* Fix - Issue where VAT removal from cart is applied even if the country is the same as the base country.
+* Fix - Issue where VAT number from account is always used when cart page is set to checkout.
+* Fix - Fatal error that might be thrown when updating / activating.
+
+2017-07-25 - version 2.3.1
+* Update - Don't show vat number field in checkout if payment is not needed.
+* Fix - When valid VAT is in account, remove VAT from cart.
+* Fix - When b2b setting is enable, apply to only EU countries.
+
+2017-06-06 - version 2.3.0
+* Fix - VAT now applies to shipping country as well.
+* Fix - Validate VAT against user submitted shipping and billing instead of whats on record.
+* Fix - Undefined variable notices on reports.
+* Fix - Shipping tax amount were not showing in reports.
+* Fix - Tax by code report not showing all types of refunds.
+* Remove - Switzerland from VAT definition.
+* Add - Enable b2b setting to force VAT to be entered.
+* Add - VAT validation on My Account VAT page.
+
+2017-04-13 - version 2.2.0
+* Renamed main file.
+* PHP 7.1 compatibility.
+* Stopped saving legacy VAT Number meta key - use _vat_number.
+* Tweaked display of numbers in backend.
+* Fix - error message shown when validation fails.
+* Fix - Translation wrong gettext function used.
+
+2017-01-25 - version 2.1.14
+* Fix - Increase validation request timeout from 5 to 30 seconds.
+
+2016-10-08 - version 2.1.13
+* Fix - Issue where My Account endpoint doesn't initially work after activation.
+* Fix - Issue where my VAT number is cleared when billing country is changed.
+
+2016-06-09 - version 2.1.12
+* Tweak - Support for tabbed My Account page introduced in WooCommerce 2.6
+* Tweak - Include VAT Number in order endpoints responses within REST API
+
+2016-04-13 - version 2.1.11
+* Fix issue where VAT number is not saved to user meta after checkout
+* Fix issue of missing text domain in plugin header
+* Tweak - Added filter to alter translation file location
+
+2016-03-02 - version 2.1.10
+* Fix incorrect IP address to display when IP is validated. This change also
+  introduces `wc_eu_vat_self_declared_ip_address` hook to filter the IP
+  address.
+
+2015-09-21 - version 2.1.9
+* Add VAT number field to My Account page
+* Add Switzerland to list of VAT countries
+
+2015-08-06 - version 2.1.8
+* run vat_number_is_valid if the cached result was 0 or false.
+
+2015-03-12 - version 2.1.7
+* Add report for non-eu VAT taxes in the same format as the EU VAT report. Useful for accounting.
+
+2015-03-12 - version 2.1.6
+* Fix report ranges.
+
+2015-03-12 - version 2.1.5
+* Fix textdomain
+
+2015-03-08 - version 2.1.4
+* Textdomain and POT update.
+
+2015-01-08 - version 2.1.3
+* Fix localisation support.
+* Tweaked what data gets saved when dealing with regular products to avoid showing IP info when not required.
+
+2015-01-08 - version 2.1.2
+* Set excemption regardless of base country (maybe_set_vat_excempt method).
+
+2015-01-01 - version 2.1.1
+* Updated geolocation class for CloudFlare support.
+* When dealing with digital goods, validate users who state that they are outside of the EU, if the IP address is inside the EU.
+* Fix options when saving other tax settings.
+
+2014-12-30 - version 2.1.0
+* Added new geolocation class with more reliable GeoIP functionality.
+* Only collect IP when dealing with digital goods in the cart.
+* Force total refresh so checkbox is displayed.
+
+2014-10-28 - version 2.0.0
+* Refactored the plugin.
+* Added additonal options for handling of orders with non-validated VAT numbers.
+* Added IP validation option for orders with digital goods (in preperation for the EU place of supply laws in January).
+* Changed the placement and look and feel of the VAT Number field to make it fit within the WC billing section.
+* Made the VAT ID append itself to formatted billing addresses automatically.
+* Added template file to control the display of the field itself.
+* Added new meta box for viewing collected information.
+* Added column in orders panel to show IP/VAT/other evidence.
+* Added reports for EC Sales and EU Vat taxes.
+* Mixed carts - force digital goods to use taxable billing address (must use tax class named 'Digital Goods')
+* Added requirement for WC 2.2.9 to support the EU VAT rates.
+
+2014-09-01 - version 1.7.2
+* Handle SERVER_BUSY responses.
+* Use transient instead of wp_cache.
+
+2014-09-01 - version 1.7.1
+* Base excemption on configured tax address in tax settings.
+
+2014-06-10 - version 1.7.0
+* Croatia
+* Set meta data when validated, so times when the API fails can be tracked.
+
+2014-04-02 - version 1.6.0
+* Use our own woo api
+
+2014-02-23 - version 1.5.9
+* Option to store unvalidated numbers as-is
+
+2014-02-14 - version 1.5.8
+* Only add errors when you press the checkout process button
+
+2014-02-14 - version 1.5.7
+* Fix notices after success
+
+2014-02-13 - version 1.5.6
+* Clear notices before adding new ones
+
+2014-01-17 - version 1.5.5
+* 2.1 Compat
+
+2013-08-07 - version 1.5.4
+* Pass saved strings though __()
+
+2013-03-15 - version 1.5.3
+* Greece uses EL instead of GR
+
+2013-03-15 - version 1.5.1
+* Update on change field
+
+2013-01-11 - version 1.5.0
+* WC 2.0 Compat
+* General cleanup
+
+2012-12-04 - version 1.4.1
+* New updater
+
+2012-04-10 - version 1.4
+* Added option to optionally deduct tax for shop base country if a valid number is added
+
+2012-04-10 - version 1.3
+* Option to show field when the customer is in the base country
+* Handling for if isvat service is down - allow vat number through.
+
+2012-03-11 - version 1.2.2
+* Add inline JS for scripts
+
+2012-03-01 - version 1.2.1
+* Fixed check after removing the number
+* Remove full stops from number
+
+2012-01-26 - version 1.2
+* WC 1.4 Compatibility
+* Added Woo Updater
+
+2011-11-15 - version 1.1.1
+* Changed textdomain
+
+1.1
+* Renamed plugin since exempt is not the correct terminology
+* Show/hide VAT Number form based on country
+* If user is in the same country then don't allow zero rate
+* VAT Number added to emails
+
+2011-10-26 - version 1.0.1
+* Added form-row-wide class
+* Added heading + option for title
+* Moved to shipping column, below order details
+
+2011-09-27 - version 1.0
+* First Release
