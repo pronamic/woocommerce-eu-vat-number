@@ -33,14 +33,8 @@ class WC_EU_VAT_Blocks_Integration implements IntegrationInterface {
 	 * When called invokes any initialization/setup for the integration.
 	 */
 	public function initialize() {
-		$asset_file_front = include plugin_dir_path( __FILE__ ) . '../build/frontend.asset.php';
-		wp_register_script(
-			'wc-blocks-eu-vat-scripts-frontend',
-			plugins_url( 'build/frontend.js', __DIR__ ),
-			$asset_file_front['dependencies'],
-			$asset_file_front['version'],
-			true
-		);
+		WC_EU_VAT_Number::register_script_with_dependencies( 'wc-blocks-eu-vat-scripts-frontend', 'build/frontend' );
+		WC_EU_VAT_Number::register_script_with_dependencies( 'wc-blocks-eu-vat-scripts-index', 'build/index' );
 
 		add_action( 'woocommerce_store_api_checkout_update_order_meta', array( $this, 'update_order_meta' ), 10, 1 );
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( $this, 'update_order_from_request' ), 10, 2 );
@@ -78,7 +72,7 @@ class WC_EU_VAT_Blocks_Integration implements IntegrationInterface {
 	 * @return string[]
 	 */
 	public function get_editor_script_handles() {
-		return array( 'wc-blocks-eu-vat-scripts-frontend' );
+		return array( 'wc-blocks-eu-vat-scripts-frontend', 'wc-blocks-eu-vat-scripts-index' );
 	}
 
 
@@ -124,6 +118,13 @@ class WC_EU_VAT_Blocks_Integration implements IntegrationInterface {
 		$order->update_meta_data( '_vat_number_is_validated', ! is_null( $data['validation']['valid'] ) ? 'true' : 'false' );
 		$order->update_meta_data( '_vat_number_is_valid', true === $data['validation']['valid'] ? 'true' : 'false' );
 		$order->update_meta_data( '_billing_vat_number', $vat_number );
+		$customer_id = $order->get_customer_id();
+
+		if ( $customer_id ) {
+			$customer = new \WC_Customer( $customer_id );
+			$customer->update_meta_data( 'vat_number', $vat_number );
+			$customer->save_meta_data();
+		}
 
 		if ( false !== WC_EU_VAT_Number::get_ip_country() ) {
 			$order->update_meta_data( '_customer_ip_country', WC_EU_VAT_Number::get_ip_country() );

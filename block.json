@@ -11,9 +11,6 @@
 		"html": false
 	},
 	"textdomain": "woocommerce-eu-vat-number",
-	"editorScript": "file:./build/index.js",
-	"editorStyle": "file:./build/index.css",
-	"style": "file:./build/index.css",
 	"attributes": {
 		"lock": {
 			"type": "object",

@@ -132,14 +132,14 @@ $zip_url = $update_data->package;
 
 line(
 	sprintf(
-		'WooCommerce Subscriptions Version: %s',
+		'WooCommerce EU VAT Number Version: %s',
 		$version
 	)
 );
 
 line(
 	sprintf(
-		'WooCommerce Subscriptions ZIP URL: %s',
+		'WooCommerce EU VAT Number ZIP URL: %s',
 		$zip_url
 	)
 );
@@ -161,9 +161,9 @@ $plugins_dir  = $work_dir . '/plugins';
 mkdir( $archives_dir );
 mkdir( $plugins_dir );
 
-$plugin_dir = $plugins_dir . '/woocommerce-subscriptions';
+$plugin_dir = $plugins_dir . '/woocommerce-eu-vat-number';
 
-$zip_file = $archives_dir . '/woocommerce-subscriptions-' . $version . '.zip';
+$zip_file = $archives_dir . '/woocommerce-eu-vat-number-' . $version . '.zip';
 
 /**
  * Download ZIP.

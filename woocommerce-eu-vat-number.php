@@ -3,16 +3,16 @@
  * Plugin Name: WooCommerce EU VAT Number
  * Plugin URI: https://woocommerce.com/products/eu-vat-number/
  * Description: The EU VAT Number extension lets you collect and validate EU VAT numbers during checkout to identify B2B transactions verses B2C. IP Addresses can also be validated to ensure they match the billing address. EU businesses with a valid VAT number can have their VAT removed prior to payment.
- * Version: 2.8.3
+ * Version: 2.8.8
  * Author: WooCommerce
  * Author URI: https://woocommerce.com/
  * Text Domain: woocommerce-eu-vat-number
  * Domain Path: /languages
- * Requires at least: 5.6
- * Tested up to: 6.1
- * WC requires at least: 6.8
- * WC tested up to: 7.4
- * Requires PHP: 7.2
+ * Requires at least: 6.1
+ * Tested up to: 6.3
+ * WC requires at least: 7.7
+ * WC tested up to: 7.9
+ * Requires PHP: 7.3
  *
  * Copyright: © 2023 WooCommerce
  * License: GNU General Public License v3.0
@@ -24,8 +24,9 @@
 
 // phpcs:disable WordPress.Files.FileName
 
-define( 'WC_EU_VAT_VERSION', '2.8.3' ); // WRCS: DEFINED_VERSION.
+define( 'WC_EU_VAT_VERSION', '2.8.8' ); // WRCS: DEFINED_VERSION.
 define( 'WC_EU_VAT_FILE', __FILE__ );
+define( 'WC_EU_ABSPATH', __DIR__ . '/' );
 define( 'WC_EU_VAT_PLUGIN_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
 
 /**
@@ -38,13 +39,14 @@ class WC_EU_VAT_Number_Init {
 	 *
 	 * @var string
 	 */
-	const WC_MIN_VERSION = '6.8';
+	const WC_MIN_VERSION = '7.7';
 
 	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
+		add_action( 'woocommerce_blocks_loaded', array( $this, 'wc_eu_vat_number_block_init' ) );
 
 		add_action( 'plugins_loaded', array( $this, 'localization' ), 0 );
 
@@ -72,6 +74,10 @@ class WC_EU_VAT_Number_Init {
 			'soap_required'      => array(
 				'callback'        => array( $this, 'is_soap_supported' ),
 				'notice_callback' => array( $this, 'requires_soap_notice' ),
+			),
+			'wc_tax_enabled'     => array(
+				'callback'        => array( $this, 'is_taxes_enabled' ),
+				'notice_callback' => array( $this, 'woocommerce_tax_disabled_notice' ),
 			),
 		);
 		foreach ( $dependencies as $check ) {
@@ -117,6 +123,17 @@ class WC_EU_VAT_Number_Init {
 	 */
 	public function is_woocommerce_blocks_active() {
 		return class_exists( 'Automattic\WooCommerce\Blocks\Package' );
+	}
+
+	/**
+	 * Checks if WooCommerce taxes are enabled.
+	 *
+	 * @since 2.8.8
+	 *
+	 * @return bool
+	 */
+	public function is_taxes_enabled() {
+		return function_exists( 'wc_tax_enabled' ) && wc_tax_enabled();
 	}
 
 	/**
@@ -179,6 +196,61 @@ class WC_EU_VAT_Number_Init {
 	}
 
 	/**
+	 * Taxes disabled notice.
+	 *
+	 * @since 2.8.8
+	 */
+	public function woocommerce_tax_disabled_notice() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
+		/*
+		 * Recheck if the notice is needed.
+		 *
+		 * This is needed on the settings page as the options are updated after the
+		 * `init` hook fires. This means that the notice can be shown on the settings
+		 * page immediately after taxes are enabled and save is clicked.
+		 */
+		if ( $this->is_taxes_enabled() ) {
+			return;
+		}
+
+		/**
+		 * Filters whether to show the tax disabled notice.
+		 *
+		 * This allows developers to prevent the taxes disabled notice from
+		 * being shown. In most cases it is recommended the extension be
+		 * deactivated if taxes are intentionally disabled.
+		 *
+		 * This hook is targeted at multisite set ups in which the extension is
+		 * globally enabled but individual sites may or may not need taxes to
+		 * be enabled.
+		 *
+		 * @since 2.8.8
+		 *
+		 * @param bool $show_notice Whether to show the notice.
+		 */
+		$show_notice = apply_filters( 'woocommerce_eu_vat_show_tax_disabled_notice', true );
+
+		if ( ! $show_notice ) {
+			return;
+		}
+
+		echo '<div class="error">';
+		echo '<p><strong>' . esc_html__( 'WooCommerce EU VAT Number is inactive.', 'woocommerce-eu-vat-number' ) . '</strong> ';
+
+		printf(
+			/* translators: %1$s: Settings link start %2$s: Link end */
+			esc_html__( 'The EU VAT Number extension functionality requires taxes be enabled on your store. To do so, go to %1$sWooCommerce > Settings%2$s, check the Enable tax rates and calculations checkbox, and click the Save changes button.', 'woocommerce-eu-vat-number' ),
+			'<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings' ) ) . '">',
+			'</a>'
+		);
+
+		echo '</div>';
+	}
+
+	/**
 	 * Init the plugin once WP is loaded.
 	 */
 	public function init() {
@@ -204,7 +276,6 @@ class WC_EU_VAT_Number_Init {
 			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 			add_filter( 'plugin_row_meta', array( $this, 'plugin_row_meta' ), 10, 2 );
 			add_filter( 'woocommerce_get_order_item_totals', 'wc_eu_vat_maybe_add_zero_tax_display', 10, 3 );
-			add_action( 'init', array( $this, 'wc_eu_vat_number_block_init' ) );
 			add_filter(
 				'__experimental_woocommerce_blocks_add_data_attributes_to_block',
 				function ( $allowed_blocks ) {
@@ -294,7 +365,7 @@ class WC_EU_VAT_Number_Init {
 	 * Registers block type and registers with WC Blocks Integration Interface.
 	 */
 	public function wc_eu_vat_number_block_init() {
-		if ( $this->is_woocommerce_blocks_active() && $this->is_woocommerce_blocks_version_supported() ) {
+		if ( $this->check_dependencies() && $this->is_woocommerce_blocks_active() && $this->is_woocommerce_blocks_version_supported() ) {
 			include_once __DIR__ . '/includes/class-wc-eu-vat-blocks.php';
 			add_action(
 				'woocommerce_blocks_checkout_block_registration',

@@ -446,7 +446,8 @@ class WC_EU_VAT_Admin {
 		// Create URL to dismiss the disclaimer.
 		$dismiss_url = add_query_arg(
 			array(
-				'dismiss_eu_vat_disclaimer' => 'yes',
+				'dismiss_eu_vat_disclaimer'       => 'yes',
+				'dismiss_eu_vat_disclaimer_nonce' => wp_create_nonce( 'dismiss_eu_vat_disclaimer' ),
 			),
 			wc_get_current_admin_url()
 		);
@@ -486,9 +487,18 @@ class WC_EU_VAT_Admin {
 	 * Dismiss EU VAT Disclaimer.
 	 */
 	public static function dismiss_eu_vat_disclaimer() {
-		$maybe_dismiss = wc_clean( filter_input( INPUT_GET, 'dismiss_eu_vat_disclaimer', FILTER_SANITIZE_STRING ) );
+		if ( ! isset( $_GET['dismiss_eu_vat_disclaimer'] ) || ! isset( $_GET['dismiss_eu_vat_disclaimer_nonce'] ) ) {
+			return;
+		}
 
-		if ( 'yes' === $maybe_dismiss ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( wp_verify_nonce( wp_unslash( $_GET['dismiss_eu_vat_disclaimer_nonce'] ), 'dismiss_eu_vat_disclaimer' ) === false ) {
+			return;
+		}
+
+		$maybe_dismiss = wc_clean( wp_unslash( $_GET['dismiss_eu_vat_disclaimer'] ) );
+
+		if ( 'yes' === $maybe_dismiss && current_user_can( 'manage_woocommerce' ) ) {
 			update_option( 'woocommerce_eu_vat_number_dismiss_disclaimer', $maybe_dismiss, false );
 		}
 	}

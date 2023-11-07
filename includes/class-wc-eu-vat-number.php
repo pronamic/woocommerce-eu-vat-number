@@ -259,11 +259,13 @@ class WC_EU_VAT_Number {
 	 * @return bool|WP_Error if valid/not valid, WP_ERROR if validation failed
 	 */
 	public static function vat_number_is_valid( $vat_number, $country, $postcode = '' ) {
+		// Replace unwanted chars on VAT Number.
+		$vat_number = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
+
 		$vat_prefix           = self::get_vat_number_prefix( $country );
 		$vat_number_formatted = self::get_formatted_vat_number( $vat_number );
 		$transient_name       = 'vat_number_' . $vat_prefix . $vat_number_formatted;
 		$cached_result        = get_transient( $transient_name );
-
 
 		// Keep supporting prefix 'XI' for Northern Ireland.
 		if ( 'GB' === $country && ! empty( $postcode ) && preg_match( '/^(bt).*$/i', $postcode ) && 'XI' === substr( $vat_number, 0, 2 ) ) {
@@ -688,9 +690,6 @@ class WC_EU_VAT_Number {
 		$billing_vat_number = wc_clean( $data['billing_vat_number'] );
 		$billing_postcode   = wc_clean( $data['billing_postcode'] );
 
-		// Replace unwanted chars on VAT Number.
-		$billing_vat_number = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $billing_vat_number ) );
-
 		if ( in_array( $billing_country, self::get_eu_countries(), true ) && ! empty( $billing_vat_number ) ) {
 			self::validate( $billing_vat_number, $billing_country, $billing_postcode );
 
@@ -739,6 +738,43 @@ class WC_EU_VAT_Number {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Load script with all required dependencies.
+	 *
+	 * @param string $handler Script handler.
+	 * @param string $script Script name.
+	 * @param array  $dependencies Additional dependencies.
+	 *
+	 * @return void
+	 */
+	public static function register_script_with_dependencies( string $handler, string $script, array $dependencies = [] ) {
+		$script_file                  = $script . '.js';
+		$script_src_url               = plugins_url( $script_file, __DIR__ );
+		$script_asset_path            = WC_EU_ABSPATH . $script . '.asset.php';
+		$script_asset                 = file_exists( $script_asset_path ) ? require $script_asset_path : [ 'dependencies' => [] ];
+		$script_asset['dependencies'] = array_merge( $script_asset['dependencies'], $dependencies );
+		wp_register_script(
+			$handler,
+			$script_src_url,
+			$script_asset['dependencies'],
+			self::get_file_version( $script_file ),
+			true
+		);
+	}
+
+	/**
+	 * Gets the file modified time as a cache buster if we're in dev mode, or the plugin version otherwise.
+	 *
+	 * @param string $file Local path to the file.
+	 * @return string The cache buster value to use for the given file.
+	 */
+	public static function get_file_version( $file ): string {
+		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG && file_exists( WC_EU_ABSPATH . $file ) ) {
+			return (string) filemtime( WC_EU_ABSPATH . trim( $file, '/' ) );
+		}
+		return WC_EU_VAT_VERSION;
 	}
 }
 

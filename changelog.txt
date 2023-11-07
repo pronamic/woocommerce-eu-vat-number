@@ -1,5 +1,38 @@
 *** EU VAT Number Changelog ***
 
+2023-09-18 - version 2.8.8
+* Add - Displays a notice warning of limited functionality if taxes are disabled.
+* Fix - Removed broken settings link from plugin page if taxes are disabled.
+
+2023-08-23 - version 2.8.7
+* Dev - Bump WordPress "tested up to" version from 6.2 to 6.3.
+* Dev - Bump WooCommerce "tested up to" version 7.9.
+* Dev - Bump WooCommerce minimum supported version from 7.2 to 7.7.
+* Dev - Bump PHP minimum supported version from 7.2 to 7.3.
+* Fix - Error saving VAT numbers using block-based checkouts.
+* Fix - PHP 8.1 deprecation notice caused by FILTER_SANITIZE_STRING.
+* Security - Added nonce and permission check when dismissing tax advice notice.
+
+2023-08-07 - version 2.8.6
+* Fix - VAT number validation for number with space between country code and number.
+* Dev - Added new GitHub Workflow to run Quality Insights Toolkit tests.
+* Dev - Added Playwright end-to-end tests.
+
+2023-07-05 - version 2.8.5
+* Dev - Bump WooCommerce "tested up to" version 7.8.
+* Dev - Bump WooCommerce minimum supported version from 6.8 to 7.2.
+* Dev - Bump WordPress minimum supported version from 5.8 to 6.1.
+* Dev - Ensure translations are properly defined.
+* Dev - Remove deprecated class aliases for framework classes renamed in 2.4.0.
+* Dev - Resolve coding standards issues.
+* Fix - Admin can now save multiple merchant Account IDs.
+
+2023-05-30 - version 2.8.4
+* Fix - Compatibility with WooCommerce Blocks checkout flow.
+* Dev – Bump WooCommerce “tested up to” version 7.6.
+* Dev – Bump WordPress minimum supported version from 5.6 to 5.8.
+* Dev – Bump WordPress “tested up to” version 6.2.
+
 2023-04-03 - version 2.8.3
 * Fix - Fatal errors if SOAP extension is not installed.
 * Fix - Plugin functions are not available when dependency requirements are not met.
