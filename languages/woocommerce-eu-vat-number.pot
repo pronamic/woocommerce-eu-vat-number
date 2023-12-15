@@ -2,10 +2,10 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 2.8.8\n"
+"Project-Id-Version: WooCommerce EU VAT Number 2.8.9\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/woocommerce-eu-vat-number\n"
-"POT-Creation-Date: 2023-09-18 02:12:29+00:00\n"
+"POT-Creation-Date: 2023-12-06 18:35:55+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -115,15 +115,15 @@ msgstr ""
 msgid "I understand"
 msgstr ""
 
-#: includes/class-wc-eu-vat-blocks.php:197
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:153
 msgid "Location confirmation."
 msgstr ""
 
-#: includes/class-wc-eu-vat-blocks.php:247
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:203
 msgid "Invalid VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-blocks.php:326
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:282
 msgid "VAT Data"
 msgstr ""
 
@@ -385,33 +385,33 @@ msgid ""
 "pass validation."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:61
+#: includes/data/eu-vat-number-settings.php:62
 msgid "Reject the order and show the customer an error message"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:62
+#: includes/data/eu-vat-number-settings.php:63
 msgid "Accept the order, but do not remove VAT."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:63
+#: includes/data/eu-vat-number-settings.php:64
 msgid "Accept the order and remove VAT."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:67
+#: includes/data/eu-vat-number-settings.php:68
 msgid "Enable B2B Transactions"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:68
+#: includes/data/eu-vat-number-settings.php:69
 msgid ""
 "This will force users to check out with a VAT number, useful for sites that "
 "transact purely from B2B."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:78
+#: includes/data/eu-vat-number-settings.php:79
 msgid "EU VAT Digital Goods Handling"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:80
+#: includes/data/eu-vat-number-settings.php:81
 #. translators: %1$s Opening anchor tag, %2$s Closing anchor tag
 msgid ""
 "EU VAT laws are changing for digital goods from the 1st Jan 2015 (affecting "
@@ -421,25 +421,25 @@ msgid ""
 "the correct amount. %1$sRead this guide%2$s for instructions on doing this."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:84
+#: includes/data/eu-vat-number-settings.php:85
 msgid "Tax Classes for Digital Goods"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:85
+#: includes/data/eu-vat-number-settings.php:86
 msgid ""
 "This option tells the plugin which of your tax classes are for digital "
 "goods. This affects the taxable location of the user as of 1st Jan 2015."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:94
+#: includes/data/eu-vat-number-settings.php:95
 msgid "Select some tax classes"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:98
+#: includes/data/eu-vat-number-settings.php:99
 msgid "Collect and Validate Evidence"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:99
+#: includes/data/eu-vat-number-settings.php:100
 msgid ""
 "This validates the customer IP address against their billing address, and "
 "prompts the customer to self-declare their address if they do not match. "
@@ -526,7 +526,7 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:394
+#: woocommerce-eu-vat-number.php:395
 msgid "VAT Number"
 msgstr ""
 

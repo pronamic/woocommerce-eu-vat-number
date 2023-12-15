@@ -57,6 +57,7 @@ return array(
 		'id'       => 'woocommerce_eu_vat_number_failure_handling',
 		'desc_tip' => true,
 		'type'     => 'select',
+		'class'    => 'wc-enhanced-select',
 		'options'  => array(
 			'reject'          => __( 'Reject the order and show the customer an error message', 'woocommerce-eu-vat-number' ),
 			'accept_with_vat' => __( 'Accept the order, but do not remove VAT.', 'woocommerce-eu-vat-number' ),

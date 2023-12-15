@@ -3,15 +3,15 @@
  * Plugin Name: WooCommerce EU VAT Number
  * Plugin URI: https://woocommerce.com/products/eu-vat-number/
  * Description: The EU VAT Number extension lets you collect and validate EU VAT numbers during checkout to identify B2B transactions verses B2C. IP Addresses can also be validated to ensure they match the billing address. EU businesses with a valid VAT number can have their VAT removed prior to payment.
- * Version: 2.8.8
+ * Version: 2.8.9
  * Author: WooCommerce
  * Author URI: https://woocommerce.com/
  * Text Domain: woocommerce-eu-vat-number
  * Domain Path: /languages
- * Requires at least: 6.1
- * Tested up to: 6.3
- * WC requires at least: 7.7
- * WC tested up to: 7.9
+ * Requires at least: 6.2
+ * Tested up to: 6.4
+ * WC requires at least: 8.1
+ * WC tested up to: 8.3
  * Requires PHP: 7.3
  *
  * Copyright: © 2023 WooCommerce
@@ -24,7 +24,7 @@
 
 // phpcs:disable WordPress.Files.FileName
 
-define( 'WC_EU_VAT_VERSION', '2.8.8' ); // WRCS: DEFINED_VERSION.
+define( 'WC_EU_VAT_VERSION', '2.8.9' ); // WRCS: DEFINED_VERSION.
 define( 'WC_EU_VAT_FILE', __FILE__ );
 define( 'WC_EU_ABSPATH', __DIR__ . '/' );
 define( 'WC_EU_VAT_PLUGIN_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
@@ -39,7 +39,7 @@ class WC_EU_VAT_Number_Init {
 	 *
 	 * @var string
 	 */
-	const WC_MIN_VERSION = '7.7';
+	const WC_MIN_VERSION = '8.1';
 
 	/**
 	 * Constructor.
@@ -366,6 +366,7 @@ class WC_EU_VAT_Number_Init {
 	 */
 	public function wc_eu_vat_number_block_init() {
 		if ( $this->check_dependencies() && $this->is_woocommerce_blocks_active() && $this->is_woocommerce_blocks_version_supported() ) {
+			include_once __DIR__ . '/includes/class-wc-eu-vat-extend-store-endpoint.php';
 			include_once __DIR__ . '/includes/class-wc-eu-vat-blocks.php';
 			add_action(
 				'woocommerce_blocks_checkout_block_registration',
@@ -404,6 +405,10 @@ class WC_EU_VAT_Number_Init {
 					),
 				)
 			);
+
+			// Extend store API with EU VAT Number related data.
+			$extend = new WC_EU_VAT_Extend_Store_Endpoint();
+			$extend->init();
 		}
 	}
 
