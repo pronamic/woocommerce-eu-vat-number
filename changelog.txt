@@ -1,5 +1,16 @@
 *** EU VAT Number Changelog ***
 
+2024-01-29 - version 2.9.0
+* Dev - Declare compatibility with WooCommerce Blocks.
+* Dev - Declare compatibility with Product Editor.
+* Dev - Bump PHP minimum supported version to 7.4.
+* Dev - Bump WooCommerce "tested up to" version 8.4.
+* Dev - Bump WooCommerce minimum supported version to 8.2.
+* Fix - Issue with VAT field not pre-filled on the Block Checkout page.
+* Fix - Update tax when the country is changed on the Block Checkout page.
+* Fix - Issue with placing an order from non-EU countries when VAT is saved in the account.
+* Tweak - Bump PHP "tested up to" version 8.3.
+
 2023-12-11 - version 2.8.9
 * Dev - Add Playwright e2e tests for Critical Flows.
 * Dev - Bump WooCommerce "tested up to" version 8.3.

@@ -35,6 +35,44 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		// Handle Checkout.
 		add_action( 'woocommerce_store_api_checkout_update_order_meta', array( $this, 'update_order_meta' ), 10, 1 );
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( $this, 'update_order_from_request' ), 10, 2 );
+		add_action( 'woocommerce_store_api_cart_update_customer_from_request', array( $this, 'set_vat_session_data' ), 10, 2 );
+	}
+
+	/**
+	 * Sets the VAT session data when the billing country is updated.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param \WC_Customer     $customer Customer object.
+	 * @param \WP_REST_Request $request  Full details about the request.
+	 */
+	public function set_vat_session_data( $customer, $request ) {
+		$params = $request->get_body_params();
+
+		if ( ! ( isset( $params['billing_address'] ) && isset( $params['billing_address']['country'] ) ) ) {
+			return;
+		}
+
+		$country                = $params['billing_address']['country'];
+		$vat_prefix             = WC_EU_VAT_Number::get_vat_number_prefix( $country );
+		$country_codes_patterns = WC_EU_VAT_Number::get_country_code_patterns();
+
+		if ( isset( $country_codes_patterns[ $vat_prefix ] ) ) {
+			$vat_number = get_user_meta( get_current_user_id(), 'vat_number', true );
+
+			$is_valid = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country );
+
+			if ( is_wp_error( $is_valid ) ) {
+				WC()->session->set( 'vat-number', null );
+				WC()->customer->set_is_vat_exempt( false );
+			} else {
+				WC()->session->set( 'vat-number', strtoupper( $vat_number ) );
+				WC()->customer->set_is_vat_exempt( true );
+			}
+		} else {
+			WC()->session->set( 'vat-number', null );
+			WC()->customer->set_is_vat_exempt( false );
+		}
 	}
 
 	/**
@@ -176,8 +214,20 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 	 * @return array Information about the result of the validation.
 	 */
 	public function validate() {
-		$data         = array();
-		$vat_number   = WC()->session->get( 'vat-number' );
+		$data       = array();
+		$vat_number = WC()->session->get( 'vat-number' );
+
+		// For countries that don't have VAT numbers.
+		if ( is_null( $vat_number ) ) {
+			$data['vat_number'] = $vat_number;
+			$data['validation'] = array(
+				'valid' => true,
+				'error' => false,
+			);
+
+			return $data;
+		}
+
 		$country      = WC()->customer->get_billing_country();
 		$postcode     = WC()->customer->get_billing_postcode();
 		$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );

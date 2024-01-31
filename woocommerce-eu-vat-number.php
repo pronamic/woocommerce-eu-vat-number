@@ -3,16 +3,17 @@
  * Plugin Name: WooCommerce EU VAT Number
  * Plugin URI: https://woocommerce.com/products/eu-vat-number/
  * Description: The EU VAT Number extension lets you collect and validate EU VAT numbers during checkout to identify B2B transactions verses B2C. IP Addresses can also be validated to ensure they match the billing address. EU businesses with a valid VAT number can have their VAT removed prior to payment.
- * Version: 2.8.9
+ * Version: 2.9.0
  * Author: WooCommerce
  * Author URI: https://woocommerce.com/
  * Text Domain: woocommerce-eu-vat-number
  * Domain Path: /languages
  * Requires at least: 6.2
  * Tested up to: 6.4
- * WC requires at least: 8.1
- * WC tested up to: 8.3
- * Requires PHP: 7.3
+ * WC requires at least: 8.2
+ * WC tested up to: 8.4
+ * Requires PHP: 7.4
+ * PHP tested up to: 8.3
  *
  * Copyright: © 2023 WooCommerce
  * License: GNU General Public License v3.0
@@ -24,7 +25,7 @@
 
 // phpcs:disable WordPress.Files.FileName
 
-define( 'WC_EU_VAT_VERSION', '2.8.9' ); // WRCS: DEFINED_VERSION.
+define( 'WC_EU_VAT_VERSION', '2.9.0' ); // WRCS: DEFINED_VERSION.
 define( 'WC_EU_VAT_FILE', __FILE__ );
 define( 'WC_EU_ABSPATH', __DIR__ . '/' );
 define( 'WC_EU_VAT_PLUGIN_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
@@ -39,7 +40,7 @@ class WC_EU_VAT_Number_Init {
 	 *
 	 * @var string
 	 */
-	const WC_MIN_VERSION = '8.1';
+	const WC_MIN_VERSION = '8.2';
 
 	/**
 	 * Constructor.
@@ -272,7 +273,7 @@ class WC_EU_VAT_Number_Init {
 				include_once __DIR__ . '/includes/class-wc-eu-vat-reports.php';
 			}
 
-			add_action( 'before_woocommerce_init', array( $this, 'declare_hpos_compatibility' ) );
+			add_action( 'before_woocommerce_init', array( $this, 'declare_woocommerce_feature_compatibility' ) );
 			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 			add_filter( 'plugin_row_meta', array( $this, 'plugin_row_meta' ), 10, 2 );
 			add_filter( 'woocommerce_get_order_item_totals', 'wc_eu_vat_maybe_add_zero_tax_display', 10, 3 );
@@ -413,11 +414,25 @@ class WC_EU_VAT_Number_Init {
 	}
 
 	/**
-	 * Declares support for HPOS.
+	 * Declares compatibility with Woocommerce features.
+	 *
+	 *  List of features:
+	 *  - custom_order_tables
+	 *  - product_block_editor
+	 *
+	 * @since 2.9.0 Rename function
 	 */
-	public function declare_hpos_compatibility() {
+	public function declare_woocommerce_feature_compatibility(): void {
 		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+				'custom_order_tables',
+				__FILE__
+			);
+
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+				'product_block_editor',
+				__FILE__
+			);
 		}
 	}
 }

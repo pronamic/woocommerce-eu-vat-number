@@ -45,11 +45,40 @@ class WC_EU_VAT_My_Account {
 		add_action( 'woocommerce_account_' . $this->endpoint . '_endpoint', array( $this, 'endpoint_content' ) );
 
 		// Save a VAT number from My Account form if one is submitted.
-		if ( isset( $_POST['action'] ) && 'edit_vat_number' === wc_clean( wp_unslash( $_POST['action'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verifying nonce inside function.
-			$this->save_vat_number();
+		add_action( 'init', array( $this, 'save_vat_number' ) );
+
+		add_action( 'woocommerce_init', array( $this, 'set_vat_session_data' ) );
+		add_action( 'woocommerce_init', array( $this, 'maybe_remove_vat' ) );
+	}
+
+	/**
+	 * Sets the VAT session data when the billing country is updated.
+	 *
+	 * @since 2.9.0
+	 */
+	public function set_vat_session_data() {
+		if ( ! is_user_logged_in() ) {
+			return;
 		}
 
-		add_action( 'woocommerce_init', array( $this, 'maybe_remove_vat' ) );
+		$vat_number = get_user_meta( get_current_user_id(), 'vat_number', true );
+
+		if ( empty( $vat_number ) || empty( WC()->customer ) ) {
+			return;
+		}
+
+		$billing_country = WC()->customer->get_billing_country();
+		$is_valid        = false;
+
+		try {
+			$is_valid = $this->validate( $vat_number, $billing_country );
+		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Ignore Exception.
+		}
+
+		if ( $is_valid && WC()->session ) {
+			WC()->session->set( 'vat-number', $vat_number );
+		}
 	}
 
 	/**
@@ -196,7 +225,7 @@ class WC_EU_VAT_My_Account {
 	public function validate( $vat_number, $billing_country, $billing_postcode = '', $current_vat = '' ) {
 		if ( empty( $vat_number ) ) {
 			if ( empty( $current_vat ) ) {
-				throw new Exception( __( 'VAT number cannot be empty.', 'woocommerce-eu-vat-number' ) );
+				throw new Exception( esc_html__( 'VAT number cannot be empty.', 'woocommerce-eu-vat-number' ) );
 			}
 			// Allow empty input to clear VAT field.
 			return true;
@@ -204,18 +233,33 @@ class WC_EU_VAT_My_Account {
 
 		if ( empty( $billing_country ) ) {
 			/* translators: 1: VAT Number */
-			throw new Exception( sprintf( __( '%1$s can not be validated because the billing country is missing. Please update your billing address.', 'woocommerce-eu-vat-number' ), '<strong>' . get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) . '</strong>' ) );
+			throw new Exception(
+				sprintf(
+					// translators: %1$s VAT number field label.
+					esc_html__( '%1$s can not be validated because the billing country is missing. Please update your billing address.', 'woocommerce-eu-vat-number' ),
+					'<strong>' . esc_html( get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) ) . '</strong>'
+				)
+			);
 		}
 
 		$valid = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $billing_country, $billing_postcode );
 
 		if ( is_wp_error( $valid ) ) {
-			throw new Exception( $valid->get_error_message() );
+			throw new Exception( esc_html( $valid->get_error_message() ) );
 		}
 
 		if ( ! $valid ) {
 			// translators: %1$s VAT number field label, %2$s VAT number, %3$s Billing Country.
-			throw new Exception( sprintf( __( 'You have entered an invalid %1$s (%2$s) for your billing country (%3$s).', 'woocommerce-eu-vat-number' ), get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ), $vat_number, $billing_country ) );
+			throw new Exception(
+				sprintf(
+					/* translators: %1$s - VAT field label, %2$s - VAT number, %2$s - billing country */
+					esc_html__( 'You have entered an invalid %1$s (%2$s) for your billing country (%3$s).', 'woocommerce-eu-vat-number' ),
+					esc_html( get_option( 'woocommerce_eu_vat_number_field_label' ) ),
+					esc_html__( 'VAT number', 'woocommerce-eu-vat-number' ),
+					esc_html( $vat_number ),
+					esc_html( $billing_country )
+				)
+			);
 		}
 
 		return true;
@@ -225,6 +269,10 @@ class WC_EU_VAT_My_Account {
 	 * Function to save VAT number from the my account form.
 	 */
 	public function save_vat_number() {
+		if ( ! ( isset( $_POST['action'] ) && 'edit_vat_number' === wc_clean( wp_unslash( $_POST['action'] ) ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verifying nonce inside function.
+			return;
+		}
+
 		if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'woocommerce-edit_vat_number' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			try {
 				$current_user_id  = get_current_user_id();
@@ -240,6 +288,10 @@ class WC_EU_VAT_My_Account {
 				update_user_meta( $current_user_id, 'vat_number', $posted_vat );
 				update_user_meta( $current_user_id, 'billing_vat_number', $posted_vat );
 
+				if ( empty( $vat_number ) && WC()->session ) {
+					WC()->session->set( 'vat-number', null );
+				}
+
 				if ( empty( $posted_vat ) ) {
 					$message = __( 'VAT number removed successfully!', 'woocommerce-eu-vat-number' );
 				} elseif ( empty( $current_vat ) ) {
@@ -247,7 +299,10 @@ class WC_EU_VAT_My_Account {
 				} else {
 					$message = __( 'VAT number updated successfully!', 'woocommerce-eu-vat-number' );
 				}
-				$this->messages = array( 'message' => $message, 'status' => 'info' );
+				$this->messages = array(
+					'message' => $message,
+					'status'  => 'info',
+				);
 			} catch ( Exception $e ) {
 				$this->messages = array(
 					'message' => $e->getMessage(),

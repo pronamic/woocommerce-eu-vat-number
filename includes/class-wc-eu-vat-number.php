@@ -9,8 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once dirname( __FILE__ ) . '/vies/class-vies-client.php';
-require_once dirname( __FILE__ ) . '/class-wc-eu-vat-uk-number-api.php';
+require_once __DIR__ . '/vies/class-vies-client.php';
+require_once __DIR__ . '/class-wc-eu-vat-uk-number-api.php';
 
 /**
  * WC_EU_VAT_Number class.
@@ -118,11 +118,16 @@ class WC_EU_VAT_Number {
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
 			wp_enqueue_script( 'wc-eu-vat', WC_EU_VAT_PLUGIN_URL . '/assets/js/eu-vat' . $suffix . '.js', array( 'jquery', 'wc-checkout' ), WC_EU_VAT_VERSION, true );
-			self::localize_wc_eu_vat_params('wc-eu-vat');
+			self::localize_wc_eu_vat_params( 'wc-eu-vat' );
 		}
 	}
 
-	public static function localize_wc_eu_vat_params($script_handle) {
+	/**
+	 * Localise data for the `wc_eu_vat_params` script.
+	 *
+	 * @param string $script_handle Script handle.
+	 */
+	public static function localize_wc_eu_vat_params( $script_handle ) {
 			wp_localize_script(
 				$script_handle,
 				'wc_eu_vat_params',
@@ -259,7 +264,13 @@ class WC_EU_VAT_Number {
 	 * @return bool|WP_Error if valid/not valid, WP_ERROR if validation failed
 	 */
 	public static function vat_number_is_valid( $vat_number, $country, $postcode = '' ) {
+		// The StoreAPI will set $vat_number to null if the user does not enter it. We should show an error in this case.
+		if ( null === $vat_number ) {
+			return new WP_Error( 'api', __( 'VAT number is required.', 'woocommerce-eu-vat-number' ) );
+		}
+
 		// Replace unwanted chars on VAT Number.
+		$vat_number = $vat_number ? $vat_number : '';
 		$vat_number = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
 
 		$vat_prefix           = self::get_vat_number_prefix( $country );
@@ -270,11 +281,6 @@ class WC_EU_VAT_Number {
 		// Keep supporting prefix 'XI' for Northern Ireland.
 		if ( 'GB' === $country && ! empty( $postcode ) && preg_match( '/^(bt).*$/i', $postcode ) && 'XI' === substr( $vat_number, 0, 2 ) ) {
 			$vat_prefix = 'XI';
-		}
-
-		// The StoreAPI will set $vat_number to null if the user does not enter it. We should show an error in this case.
-		if ( null === $vat_number ) {
-			return new WP_Error( 'api', __( 'VAT number is required.', 'woocommerce-eu-vat-number' ) );
 		}
 
 		// Return error if VAT Country Code doesn't match or exist.
@@ -333,6 +339,17 @@ class WC_EU_VAT_Number {
 
 		set_transient( $transient_name, $is_valid ? 'yes' : 'no', DAY_IN_SECONDS );
 		return $is_valid;
+	}
+
+	/**
+	 * Returns array of country code patterns.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @return array
+	 */
+	public static function get_country_code_patterns() {
+		return self::$country_codes_patterns;
 	}
 
 	/**
@@ -609,7 +626,7 @@ class WC_EU_VAT_Number {
 	 * @return array
 	 */
 	public static function woocommerce_get_tax_location( $location, $tax_class = '' ) {
-		if ( ! empty( WC()->customer ) && in_array( sanitize_title( $tax_class ), get_option( 'woocommerce_eu_vat_number_digital_tax_classes', array() ), true ) ) {
+		if ( ! empty( WC()->customer ) && ! empty( $tax_class ) && in_array( sanitize_title( $tax_class ), get_option( 'woocommerce_eu_vat_number_digital_tax_classes', array() ), true ) ) {
 			return array(
 				WC()->customer->get_billing_country(),
 				WC()->customer->get_billing_state(),
@@ -631,11 +648,11 @@ class WC_EU_VAT_Number {
 	 */
 	public static function add_vat_number_to_order_response( $response ) {
 		if ( is_a( $response, 'WP_REST_Response' ) ) {
-			$order = wc_get_order( (int) $response->data['id'] );
+			$order                        = wc_get_order( (int) $response->data['id'] );
 			$response->data['vat_number'] = $order->get_meta( '_billing_vat_number', true );
 		} elseif ( is_array( $response ) && ! empty( $response['id'] ) ) {
 			// Legacy endpoint.
-			$order = wc_get_order( (int) $response['id'] );
+			$order                  = wc_get_order( (int) $response['id'] );
 			$response['vat_number'] = $order->get_meta( '_billing_vat_number', true );
 		}
 		return $response;
@@ -749,11 +766,11 @@ class WC_EU_VAT_Number {
 	 *
 	 * @return void
 	 */
-	public static function register_script_with_dependencies( string $handler, string $script, array $dependencies = [] ) {
+	public static function register_script_with_dependencies( string $handler, string $script, array $dependencies = array() ) {
 		$script_file                  = $script . '.js';
 		$script_src_url               = plugins_url( $script_file, __DIR__ );
 		$script_asset_path            = WC_EU_ABSPATH . $script . '.asset.php';
-		$script_asset                 = file_exists( $script_asset_path ) ? require $script_asset_path : [ 'dependencies' => [] ];
+		$script_asset                 = file_exists( $script_asset_path ) ? require $script_asset_path : array( 'dependencies' => array() );
 		$script_asset['dependencies'] = array_merge( $script_asset['dependencies'], $dependencies );
 		wp_register_script(
 			$handler,
