@@ -75,8 +75,8 @@ const VatInput = ( props ) => {
 	 * Sets the VAT field on load if it is already set in the session.
 	 */
 	useEffect( () => {
-		setVat( extensions[ 'woocommerce-eu-vat-number' ].vat_number );
-	}, [ extensions[ 'woocommerce-eu-vat-number' ].vat_number ] );
+		setVat( extensions[ 'woocommerce-eu-vat-number' ]?.vat_number );
+	}, [ extensions[ 'woocommerce-eu-vat-number' ]?.vat_number ] );
 
 	/**
 	 * This effect sets location_confirmation, it is required regardless of shouldValidateIp, or else the API will give

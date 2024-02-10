@@ -1,5 +1,8 @@
 *** EU VAT Number Changelog ***
 
+2024-02-09 - version 2.9.1
+* Fix - Undefined vat_number error on the Block Checkout page.
+
 2024-01-29 - version 2.9.0
 * Dev - Declare compatibility with WooCommerce Blocks.
 * Dev - Declare compatibility with Product Editor.
