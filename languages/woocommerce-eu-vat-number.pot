@@ -2,10 +2,10 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 2.9.1\n"
+"Project-Id-Version: WooCommerce EU VAT Number 2.9.2\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/woocommerce-eu-vat-number\n"
-"POT-Creation-Date: 2024-02-09 11:07:55+00:00\n"
+"POT-Creation-Date: 2024-03-18 14:29:31+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,6 +26,7 @@ msgstr ""
 #: includes/class-wc-eu-vat-number.php:740
 #: includes/class-wc-eu-vat-privacy.php:147
 #: includes/class-wc-eu-vat-report-ec-sales-list.php:215
+#: templates/my-account/my-vat-number.php:22
 msgid "VAT number"
 msgstr ""
 
@@ -347,73 +348,87 @@ msgstr ""
 msgid "Standard"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:28
+#: includes/data/eu-vat-number-settings.php:37
 msgid "EU VAT Number Handling"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:32
+#: includes/data/eu-vat-number-settings.php:41
 msgid "VAT Number Field Label"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:33
+#: includes/data/eu-vat-number-settings.php:42
 msgid "The label that appears at checkout for the VAT number field."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:41
+#: includes/data/eu-vat-number-settings.php:50
 msgid "VAT Number Field Description"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:42
+#: includes/data/eu-vat-number-settings.php:51
 msgid "The description that appears at checkout below the VAT number field."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:48
+#: includes/data/eu-vat-number-settings.php:57
 msgid "Remove VAT for Businesses in Your Base Country"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:49
+#: includes/data/eu-vat-number-settings.php:58
 msgid ""
 "Remove the VAT from the order even when the customer is in your base "
 "country."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:55
+#: includes/data/eu-vat-number-settings.php:64
 msgid "Failed Validation Handling"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:56
+#: includes/data/eu-vat-number-settings.php:65
 msgid ""
 "This option determines how orders are handled if the VAT number does not "
 "pass validation."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:62
+#: includes/data/eu-vat-number-settings.php:71
 msgid "Reject the order and show the customer an error message"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:63
+#: includes/data/eu-vat-number-settings.php:72
 msgid "Accept the order, but do not remove VAT."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:64
+#: includes/data/eu-vat-number-settings.php:73
 msgid "Accept the order and remove VAT."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:68
+#: includes/data/eu-vat-number-settings.php:77
 msgid "Enable B2B Transactions"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:69
+#: includes/data/eu-vat-number-settings.php:78
 msgid ""
 "This will force users to check out with a VAT number, useful for sites that "
 "transact purely from B2B."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:79
+#: includes/data/eu-vat-number-settings.php:86
+msgid "Disable Express Pay"
+msgstr ""
+
+#: includes/data/eu-vat-number-settings.php:87
+msgid "Prevent incompatible payment methods."
+msgstr ""
+
+#: includes/data/eu-vat-number-settings.php:88
+msgid ""
+"This will prevent payment methods that do not require customers to enter a "
+"VAT number. Limited to compatible payment gateways."
+msgstr ""
+
+#: includes/data/eu-vat-number-settings.php:100
 msgid "EU VAT Digital Goods Handling"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:81
+#: includes/data/eu-vat-number-settings.php:102
 #. translators: %1$s Opening anchor tag, %2$s Closing anchor tag
 msgid ""
 "EU VAT laws are changing for digital goods from the 1st Jan 2015 (affecting "
@@ -423,25 +438,25 @@ msgid ""
 "the correct amount. %1$sRead this guide%2$s for instructions on doing this."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:85
+#: includes/data/eu-vat-number-settings.php:106
 msgid "Tax Classes for Digital Goods"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:86
+#: includes/data/eu-vat-number-settings.php:107
 msgid ""
 "This option tells the plugin which of your tax classes are for digital "
 "goods. This affects the taxable location of the user as of 1st Jan 2015."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:95
+#: includes/data/eu-vat-number-settings.php:116
 msgid "Select some tax classes"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:99
+#: includes/data/eu-vat-number-settings.php:120
 msgid "Collect and Validate Evidence"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:100
+#: includes/data/eu-vat-number-settings.php:121
 msgid ""
 "This validates the customer IP address against their billing address, and "
 "prompts the customer to self-declare their address if they do not match. "
@@ -464,31 +479,31 @@ msgid ""
 "<strong>%s</strong>."
 msgstr ""
 
-#: templates/my-account/my-vat-number.php:25
+#: templates/my-account/my-vat-number.php:28
 msgid "Save"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:172 woocommerce-eu-vat-number.php:184
-#: woocommerce-eu-vat-number.php:195 woocommerce-eu-vat-number.php:242
+#: woocommerce-eu-vat-number.php:173 woocommerce-eu-vat-number.php:185
+#: woocommerce-eu-vat-number.php:196 woocommerce-eu-vat-number.php:243
 #. translators: %1$s: Plugin page link start %2$s Link end
 #. translators: %1$s: Minimum version %2$s: Plugin page link start %3$s Link
 #. end
 msgid "WooCommerce EU VAT Number is inactive."
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:172
+#: woocommerce-eu-vat-number.php:173
 msgid ""
 "The WooCommerce plugin must be active for EU VAT Number to work. %1$sPlease "
 "install and activate WooCommerce%2$s."
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:184
+#: woocommerce-eu-vat-number.php:185
 msgid ""
 "The WooCommerce plugin must be at least version %1$s for EU VAT Number to "
 "work. %2$sPlease upgrade WooCommerce%3$s."
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:195
+#: woocommerce-eu-vat-number.php:196
 msgid ""
 "Your server does not provide SOAP support which is required functionality "
 "for communicating with VIES. You will need to reach out to your web hosting "
@@ -496,7 +511,7 @@ msgid ""
 "server."
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:246
+#: woocommerce-eu-vat-number.php:247
 #. translators: %1$s: Settings link start %2$s: Link end
 msgid ""
 "The EU VAT Number extension functionality requires taxes be enabled on your "
@@ -504,31 +519,31 @@ msgid ""
 "rates and calculations checkbox, and click the Save changes button."
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:326
+#: woocommerce-eu-vat-number.php:328
 msgid "Settings"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:346
+#: woocommerce-eu-vat-number.php:348
 msgid "View Plugin Documentation"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:346
+#: woocommerce-eu-vat-number.php:348
 msgid "Docs"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:352
+#: woocommerce-eu-vat-number.php:354
 msgid "View Plugin Changelog"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:352
+#: woocommerce-eu-vat-number.php:354
 msgid "Changelog"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:358
+#: woocommerce-eu-vat-number.php:360
 msgid "Support"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:396
+#: woocommerce-eu-vat-number.php:507
 msgid "VAT Number"
 msgstr ""
 
@@ -556,8 +571,8 @@ msgstr ""
 msgid "https://woocommerce.com/"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:36
-#: includes/data/eu-vat-number-settings.php:37
+#: includes/data/eu-vat-number-settings.php:45
+#: includes/data/eu-vat-number-settings.php:46
 msgctxt "Default Field Label"
 msgid "VAT number"
 msgstr ""

@@ -1,5 +1,18 @@
 *** EU VAT Number Changelog ***
 
+2024-03-18 - version 2.9.2
+* Add - Option to disable Express Pay buttons for B2B stores (WooPayments compatibility).
+* Add - Document WooPayments compatibility.
+* Add - Support to hide Stripe Express Payment buttons when the disable incompatible payment methods setting is enabled.
+* Add - Support to hide Square Express Payment buttons when the disable incompatible payment methods setting is enabled.
+* Add - Support to hide Braintree Express Payment buttons when the disable incompatible payment methods setting is enabled.
+* Dev - Bump WooCommerce "tested up to" version 8.7.
+* Dev - Bump WooCommerce minimum supported version to 8.5.
+* Dev - Bump WordPress "tested up to" version 6.5.
+* Dev - Bump WordPress minimum supported version to 6.3.
+* Fix - VAT header background color in the Checkout Block Editor.
+* Fix - Missing input label under My Account > VAT number.
+
 2024-02-09 - version 2.9.1
 * Fix - Undefined vat_number error on the Block Checkout page.
 

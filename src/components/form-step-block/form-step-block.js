@@ -60,6 +60,7 @@ export const FormStepBlock = ( {
 					className={ '' }
 					value={ title }
 					onChange={ ( value ) => setAttributes( { title: value } ) }
+					style={ { backgroundColor: 'rgba(0, 0, 0, 0)' } }
 				/>
 			</FormStepHeading>
 			<div className="wc-block-components-checkout-step__container">
@@ -80,6 +81,7 @@ export const FormStepBlock = ( {
 								description: value,
 							} )
 						}
+						style={ { backgroundColor: 'rgba(0, 0, 0, 0)' } }
 					/>
 				</p>
 				<div className="wc-block-components-checkout-step__content">

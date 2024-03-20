@@ -1,17 +1,18 @@
 <?php
 /**
  * Plugin Name: WooCommerce EU VAT Number
+ * Requires Plugins: woocommerce
  * Plugin URI: https://woocommerce.com/products/eu-vat-number/
  * Description: The EU VAT Number extension lets you collect and validate EU VAT numbers during checkout to identify B2B transactions verses B2C. IP Addresses can also be validated to ensure they match the billing address. EU businesses with a valid VAT number can have their VAT removed prior to payment.
- * Version: 2.9.1
+ * Version: 2.9.2
  * Author: WooCommerce
  * Author URI: https://woocommerce.com/
  * Text Domain: woocommerce-eu-vat-number
  * Domain Path: /languages
- * Requires at least: 6.2
- * Tested up to: 6.4
- * WC requires at least: 8.2
- * WC tested up to: 8.4
+ * Requires at least: 6.3
+ * Tested up to: 6.5
+ * WC requires at least: 8.5
+ * WC tested up to: 8.7
  * Requires PHP: 7.4
  * PHP tested up to: 8.3
  *
@@ -25,7 +26,7 @@
 
 // phpcs:disable WordPress.Files.FileName
 
-define( 'WC_EU_VAT_VERSION', '2.9.1' ); // WRCS: DEFINED_VERSION.
+define( 'WC_EU_VAT_VERSION', '2.9.2' ); // WRCS: DEFINED_VERSION.
 define( 'WC_EU_VAT_FILE', __FILE__ );
 define( 'WC_EU_ABSPATH', __DIR__ . '/' );
 define( 'WC_EU_VAT_PLUGIN_URL', untrailingslashit( plugins_url( basename( plugin_dir_path( __FILE__ ) ), basename( __FILE__ ) ) ) );
@@ -40,7 +41,7 @@ class WC_EU_VAT_Number_Init {
 	 *
 	 * @var string
 	 */
-	const WC_MIN_VERSION = '8.2';
+	const WC_MIN_VERSION = '8.5';
 
 	/**
 	 * Constructor.
@@ -273,6 +274,7 @@ class WC_EU_VAT_Number_Init {
 				include_once __DIR__ . '/includes/class-wc-eu-vat-reports.php';
 			}
 
+			$this->filter_woocpayments_compatibility();
 			add_action( 'before_woocommerce_init', array( $this, 'declare_woocommerce_feature_compatibility' ) );
 			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 			add_filter( 'plugin_row_meta', array( $this, 'plugin_row_meta' ), 10, 2 );
@@ -360,6 +362,115 @@ class WC_EU_VAT_Number_Init {
 			return array_merge( $links, $row_meta );
 		}
 		return (array) $links;
+	}
+
+	/**
+	 * Remove incompatible express payment options from WooCommerce Payments.
+	 *
+	 * Neither the Apple Pay or Google Pay APIs support the collection of
+	 * VAT numbers so store owners running a B2B store will disable these
+	 * payment methods by default.
+	 *
+	 * WooPay is not compatible.
+	 *
+	 * @see https://woo.com/document/woopay-merchant-documentation/#incompatible-extensions
+	 * @see https://github.com/woocommerce/woocommerce-eu-vat-number/issues/315#issuecomment-1888262947
+	 *
+	 * @since 2.9.2
+	 */
+	public function filter_woocpayments_compatibility() {
+		// No changes within the admin.
+		if ( is_admin() ) {
+			return;
+		}
+
+		// No changes if B2B is not enabled.
+		if ( 'no' === get_option( 'woocommerce_eu_vat_number_b2b', 'no' ) ) {
+			return;
+		}
+
+		// No changes if the store owner has deactivated this feature.
+		if ( 'no' === get_option( 'woocommerce_eu_vat_number_prevent_incompatible_payment_methods', 'no' ) ) {
+			return;
+		}
+
+		// Prevent incompatible payment methods from being used.
+		if ( function_exists( 'wcpay_init' ) ) {
+			add_filter(
+				'option_woocommerce_woocommerce_payments_settings',
+				/**
+				 * Filter the WooCommerce Payments settings to disable incompatible payment methods.
+				 *
+				 * @param array $payment_options The WooCommerce Payments settings.
+				 * @return array Modified WooCommerce Payments settings.
+				 */
+				function ( $payment_options ) {
+					$payment_options['payment_request']   = 'no';
+					$payment_options['platform_checkout'] = 'no';
+
+					return $payment_options;
+				}
+			);
+		}
+
+		// Compatibility for Stripe.
+		if ( function_exists( 'woocommerce_gateway_stripe' ) ) {
+			// Hide express payment button on the Checkout page.
+			add_filter(
+				'wc_stripe_hide_payment_request_on_product_page',
+				'__return_true',
+				999
+			);
+
+			// Hide express payment button on the Cart page.
+			add_filter(
+				'wc_stripe_show_payment_request_on_cart',
+				'__return_false',
+				999
+			);
+
+			// Hide express payment button on the Single product page.
+			add_filter(
+				'wc_stripe_show_payment_request_on_checkout',
+				'__return_false',
+				999
+			);
+		}
+
+		// Compatibility for Square.
+		if ( class_exists( 'WooCommerce_Square_Loader' ) ) {
+			add_filter(
+				'option_woocommerce_square_credit_card_settings',
+				/**
+				 * Filter the Square settings to disable incompatible payment methods.
+				 *
+				 * @param array $options Square setting options.
+				 * @return array Modified Square settings.
+				 */
+				function ( $option ) {
+					$option['enable_digital_wallets'] = 'no';
+					return $option;
+				},
+				999
+			);
+		}
+
+		// Compatibility for Braintree.
+		if ( class_exists( 'WC_PayPal_Braintree_Loader' ) ) {
+			// Hide express payment button on the Cart page.
+			add_filter(
+				'wc_braintree_paypal_cart_checkout_enabled',
+				'__return_false',
+				999
+			);
+
+			// Hide express payment button on the Single product page.
+			add_filter(
+				'wc_braintree_paypal_product_buy_now_enabled',
+				'__return_false',
+				999
+			);
+		}
 	}
 
 	/**

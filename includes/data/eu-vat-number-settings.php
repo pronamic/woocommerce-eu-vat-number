@@ -15,11 +15,20 @@ $tax_classes = WC_Tax::get_tax_classes();
 $classes_options             = array();
 $classes_options['standard'] = __( 'Standard', 'woocommerce-eu-vat-number' );
 
+$wc_eu_vat_express_pay_override_compatible_sniffs = array(
+	function_exists( 'wcpay_init' ),
+	function_exists( 'woocommerce_gateway_stripe' ),
+	class_exists( 'WooCommerce_Square_Loader' ),
+	class_exists( 'WC_PayPal_Braintree_Loader' ),
+);
+
+$wc_eu_vat_express_pay_override_compatible = in_array( true, $wc_eu_vat_express_pay_override_compatible_sniffs, true );
+
 foreach ( $tax_classes as $class ) {
 	$classes_options[ sanitize_title( $class ) ] = esc_html( $class );
 }
 
-return array(
+$wc_eu_vat_settings = array(
 	array(
 		'type' => 'sectionend',
 	),
@@ -65,12 +74,24 @@ return array(
 		),
 	),
 	array(
-		'name'    => __( 'Enable B2B Transactions', 'woocommerce-eu-vat-number' ),
-		'desc'    => __( 'This will force users to check out with a VAT number, useful for sites that transact purely from B2B.', 'woocommerce-eu-vat-number' ),
-		'id'      => 'woocommerce_eu_vat_number_b2b',
-		'type'    => 'checkbox',
-		'default' => 'no',
+		'name'            => __( 'Enable B2B Transactions', 'woocommerce-eu-vat-number' ),
+		'desc'            => __( 'This will force users to check out with a VAT number, useful for sites that transact purely from B2B.', 'woocommerce-eu-vat-number' ),
+		'id'              => 'woocommerce_eu_vat_number_b2b',
+		'type'            => 'checkbox',
+		'default'         => 'no',
+		'show_if_checked' => $wc_eu_vat_express_pay_override_compatible ? 'option' : false,
+		'checkboxgroup'   => $wc_eu_vat_express_pay_override_compatible ? 'start' : null,
 	),
+	$wc_eu_vat_express_pay_override_compatible ? array(
+		'name'            => __( 'Disable Express Pay', 'woocommerce-eu-vat-number' ),
+		'desc'            => __( 'Prevent incompatible payment methods.', 'woocommerce-eu-vat-number' ),
+		'desc_tip'        => __( 'This will prevent payment methods that do not require customers to enter a VAT number. Limited to compatible payment gateways.', 'woocommerce-eu-vat-number' ),
+		'id'              => 'woocommerce_eu_vat_number_prevent_incompatible_payment_methods',
+		'type'            => 'checkbox',
+		'default'         => 'yes',
+		'show_if_checked' => 'yes',
+		'checkboxgroup'   => 'end',
+	) : array(),
 	array(
 		'type' => 'sectionend',
 	),
@@ -103,3 +124,5 @@ return array(
 		'default' => 'no',
 	),
 );
+
+return $wc_eu_vat_settings;
