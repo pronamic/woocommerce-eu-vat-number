@@ -1,5 +1,10 @@
 *** EU VAT Number Changelog ***
 
+2024-04-22 - version 2.9.3
+* Add - Show an admin notice letting users know to adjust the position of the VAT number field in the Checkout Block.
+* Dev - Bump WooCommerce "tested up to" version 8.8.
+* Dev - Bump WooCommerce minimum supported version to 8.6.
+
 2024-03-18 - version 2.9.2
 * Add - Option to disable Express Pay buttons for B2B stores (WooPayments compatibility).
 * Add - Document WooPayments compatibility.

@@ -2,10 +2,10 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 2.9.2\n"
+"Project-Id-Version: WooCommerce EU VAT Number 2.9.3\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/woocommerce-eu-vat-number\n"
-"POT-Creation-Date: 2024-03-18 14:29:31+00:00\n"
+"POT-Creation-Date: 2024-04-22 13:33:45+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -14,9 +14,9 @@ msgstr ""
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "X-Generator: node-wp-i18n 1.2.6\n"
 
-#: includes/class-wc-eu-vat-admin.php:59 includes/class-wc-eu-vat-admin.php:172
-#: includes/class-wc-eu-vat-admin.php:368
-#: includes/class-wc-eu-vat-admin.php:385
+#: includes/class-wc-eu-vat-admin.php:63 includes/class-wc-eu-vat-admin.php:182
+#: includes/class-wc-eu-vat-admin.php:378
+#: includes/class-wc-eu-vat-admin.php:395
 #: includes/class-wc-eu-vat-my-account.php:154
 #: includes/class-wc-eu-vat-my-account.php:176
 #: includes/class-wc-eu-vat-my-account.php:240
@@ -30,59 +30,59 @@ msgstr ""
 msgid "VAT number"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:79 includes/class-wc-eu-vat-admin.php:252
+#: includes/class-wc-eu-vat-admin.php:83 includes/class-wc-eu-vat-admin.php:262
 #: includes/class-wc-eu-vat-privacy.php:20
 msgid "EU VAT"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:153
+#: includes/class-wc-eu-vat-admin.php:163
 msgid "This order is out of scope for EU VAT."
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:165
+#: includes/class-wc-eu-vat-admin.php:175
 msgid "B2B"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:166
+#: includes/class-wc-eu-vat-admin.php:176
 msgid "Yes"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:166
+#: includes/class-wc-eu-vat-admin.php:176
 msgid "No"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:177
+#: includes/class-wc-eu-vat-admin.php:187
 msgid "Validation was not possible"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:186
+#: includes/class-wc-eu-vat-admin.php:196
 msgid "IP Address"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:187
-#: includes/class-wc-eu-vat-admin.php:205
-#: includes/class-wc-eu-vat-admin.php:213
+#: includes/class-wc-eu-vat-admin.php:197
+#: includes/class-wc-eu-vat-admin.php:215
+#: includes/class-wc-eu-vat-admin.php:223
 msgid "Unknown"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:191
+#: includes/class-wc-eu-vat-admin.php:201
 msgid "IP Country"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:200
-#: includes/class-wc-eu-vat-admin.php:296
+#: includes/class-wc-eu-vat-admin.php:210
+#: includes/class-wc-eu-vat-admin.php:306
 msgid "(self-declared)"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:212
+#: includes/class-wc-eu-vat-admin.php:222
 msgid "Billing Country"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:284
+#: includes/class-wc-eu-vat-admin.php:294
 msgid "(validation failed)"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:368
+#: includes/class-wc-eu-vat-admin.php:378
 #: includes/class-wc-eu-vat-my-account.php:256
 #: includes/class-wc-eu-vat-number.php:726
 #. translators: %1$s VAT number field label, %2$s VAT number, %3$s Billing
@@ -93,7 +93,7 @@ msgstr ""
 msgid "You have entered an invalid %1$s (%2$s) for your billing country (%3$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:464
+#: includes/class-wc-eu-vat-admin.php:474
 #. translators: %1$s Opening strong tag, %2$s Closing strong tag, %3$s Break
 #. tag.
 msgid ""
@@ -105,7 +105,7 @@ msgid ""
 "from %1$sNorthern Ireland%2$s."
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:475
+#: includes/class-wc-eu-vat-admin.php:485
 #. translators: %1$s Opening strong tag, %2$s Closing strong tag.
 msgid ""
 "By using %1$sWooCommerce EU VAT Number%2$s plugin, you've agreed that the "
@@ -114,8 +114,18 @@ msgid ""
 "tax specific questions."
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:480
+#: includes/class-wc-eu-vat-admin.php:490
 msgid "I understand"
+msgstr ""
+
+#: includes/class-wc-eu-vat-admin.php:561
+#. translators: %1$s - <strong>, %2$s - </strong>, %3$s - Link to edit checkout
+#. page, %4$s - closing tag
+msgid ""
+"%1$sWooCommerce EU VAT Number%2$s plugin adds a VAT number field to the "
+"checkout block though it may appear after the \"Place Order\" button. "
+"Please %3$sedit%4$s the checkout block to adjust the position of the VAT "
+"Number field accordingly."
 msgstr ""
 
 #: includes/class-wc-eu-vat-extend-store-endpoint.php:191

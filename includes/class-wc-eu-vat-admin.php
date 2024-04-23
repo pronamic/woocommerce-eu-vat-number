@@ -42,6 +42,10 @@ class WC_EU_VAT_Admin {
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_admin_notice' ) );
 		add_action( 'update_option_woocommerce_default_country', array( __CLASS__, 'reset_admin_notice_display' ), 10, 3 );
 		add_action( 'update_option_woocommerce_store_postcode', array( __CLASS__, 'reset_admin_notice_display' ), 10, 3 );
+
+		// Notice for adjust vat number field on Block checkout.
+		add_action( 'wp_ajax_wc_eu_vat_dismiss_checkout_notice', array( __CLASS__, 'dismiss_block_checkout_notice' ), 10 );
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_admin_notice_for_block_checkout' ) );
 	}
 
 	/**
@@ -101,11 +105,17 @@ class WC_EU_VAT_Admin {
 		// Load admin style.
 		wp_enqueue_style( 'wc_eu_vat_admin_css', plugins_url( 'assets/css/admin.css', WC_EU_VAT_FILE ), array(), WC_EU_VAT_VERSION );
 
-		// Load script only on add/edit order page.
-		if ( $is_order_edit_screen ) {
-			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-			wp_enqueue_script( 'wc-eu-vat-admin', WC_EU_VAT_PLUGIN_URL . '/assets/js/admin' . $suffix . '.js', array( 'jquery' ), WC_EU_VAT_VERSION, true );
-		}
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+		wp_enqueue_script( 'wc-eu-vat-admin', WC_EU_VAT_PLUGIN_URL . '/assets/js/admin' . $suffix . '.js', array( 'jquery' ), WC_EU_VAT_VERSION, true );
+
+		wp_localize_script(
+			'wc-eu-vat-admin',
+			'wc_eu_vat_admin_params',
+			array(
+				'ajax_url'      => admin_url( 'admin-ajax.php' ),
+				'dismiss_nonce' => wp_create_nonce( 'dismiss_block_checkout_notice' ),
+			)
+		);
 	}
 
 	/**
@@ -512,6 +522,108 @@ class WC_EU_VAT_Admin {
 	 */
 	public static function reset_admin_notice_display( $old_value, $value, $option ) {
 		delete_option( 'woocommerce_eu_vat_number_dismiss_disclaimer' );
+	}
+
+	/**
+	 * Display admin notice for block checkout.
+	 *
+	 * @since 2.9.3
+	 */
+	public static function maybe_show_admin_notice_for_block_checkout() {
+		// Check whether disclaimer is already dismissed or taxes are not enabled.
+		if (
+			! wc_tax_enabled() ||
+			'yes' === get_option( 'woocommerce_eu_vat_number_dismiss_block_checkout_notice', 'no' ) ||
+			! current_user_can( 'manage_woocommerce' ) // phpcs:ignore WordPress.WP.Capabilities.Unknown
+		) {
+			return;
+		}
+
+		// Check if the block checkout is the default checkout.
+		if ( ! WC_Blocks_Utils::has_block_in_page( wc_get_page_id( 'checkout' ), 'woocommerce/checkout' ) ) {
+			return;
+		}
+
+		// Check if it is already adjusted.
+		if ( self::is_eu_vat_block_adjusted() ) {
+			update_option( 'woocommerce_eu_vat_number_dismiss_block_checkout_notice', 'yes', false );
+			return;
+		}
+		?>
+
+		<div class="notice notice-info wc-eu-vat-block-checkout-notice is-dismissible">
+			<p>
+				<?php
+				// translators: %1$s Opening strong tag, %2$s Closing strong tag.
+				echo wp_kses_post(
+					sprintf(
+						/* translators: %1$s - <strong>, %2$s - </strong>, %3$s - Link to edit checkout page, %4$s - closing tag */
+						esc_html__( '%1$sWooCommerce EU VAT Number%2$s plugin adds a VAT number field to the checkout block though it may appear after the "Place Order" button. Please %3$sedit%4$s the checkout block to adjust the position of the VAT Number field accordingly.', 'woocommerce-eu-vat-number' ),
+						'<strong>',
+						'</strong>',
+						'<a href="' . esc_url( get_edit_post_link( wc_get_page_id( 'checkout' ) ) ) . '">',
+						'</a>'
+					)
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Dismiss Block checkout notice.
+	 *
+	 * @since 2.9.3
+	 */
+	public static function dismiss_block_checkout_notice() {
+		check_ajax_referer( 'dismiss_block_checkout_notice', 'security' );
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown
+			return;
+		}
+
+		update_option( 'woocommerce_eu_vat_number_dismiss_block_checkout_notice', 'yes', false );
+	}
+
+	/**
+	 * Check if EU VAT inner block is already adjusted in block checkout.
+	 *
+	 * @return boolean
+	 */
+	public static function is_eu_vat_block_adjusted() {
+		$page = get_post( wc_get_page_id( 'checkout' ) );
+		if ( ! $page ) {
+			return false;
+		}
+
+		$transient_key = 'wc_eu_vat_block_adjusted';
+		$cached_result = get_transient( $transient_key );
+
+		if ( ! empty( $cached_result ) ) {
+			return 'yes' === $cached_result;
+		}
+
+		$is_adjusted = false;
+		$blocks      = parse_blocks( $page->post_content );
+		foreach ( $blocks as $block ) {
+			if ( 'woocommerce/checkout' === $block['blockName'] ) {
+				foreach ( $block['innerBlocks'] as $inner_block ) {
+					if ( 'woocommerce/checkout-fields-block' === $inner_block['blockName'] ) {
+						$inner_blocks = $inner_block['innerBlocks'];
+						$block_names  = wp_list_pluck( $inner_blocks, 'blockName' );
+						$last_block   = $block_names[ array_key_last( $block_names ) ];
+						if ( in_array( 'woocommerce/eu-vat-number', $block_names, true ) && 'woocommerce/eu-vat-number' !== $last_block ) {
+							$is_adjusted = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		set_transient( $transient_key, $is_adjusted ? 'yes' : 'no', HOUR_IN_SECONDS );
+		return $is_adjusted;
 	}
 }
 
