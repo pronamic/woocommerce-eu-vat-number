@@ -101,10 +101,19 @@ class WC_EU_VAT_My_Account {
 
 		// Validate if VAT is valid. If valid, check for VAT exempt.
 		try {
-			$billing_country  = WC()->customer->get_billing_country();
-			$shipping_country = WC()->customer->get_shipping_country();
+			$billing_country   = WC()->customer->get_billing_country();
+			$billing_postcode  = WC()->customer->get_billing_postcode() ?? '';
+			$shipping_country  = WC()->customer->get_shipping_country() ?? $billing_country;
+			$shipping_postcode = WC()->customer->get_shipping_postcode() ?? '';
 
-			if ( $this->validate( $vat_number, $billing_country ) ) {
+			$country  = $billing_country;
+			$postcode = $billing_postcode;
+			if ( WC()->customer->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
+				$country  = $shipping_country;
+				$postcode = $shipping_postcode;
+			}
+
+			if ( $this->validate( $vat_number, $country, $postcode ) ) {
 				WC_EU_VAT_Number::maybe_set_vat_exempt( true, $billing_country, $shipping_country );
 			}
 		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
@@ -214,15 +223,15 @@ class WC_EU_VAT_My_Account {
 	 *
 	 * @version 2.3.0
 	 * @since 2.3.0
-	 * @param  string $vat_number       VAT number passed by the form.
-	 * @param  string $billing_country  Billing country of the order.
-	 * @param  string $billing_postcode Billing postcode of the order.
-	 * @param  string $current_vat      VAT number saved in database.
+	 * @param  string $vat_number  VAT number passed by the form.
+	 * @param  string $country     Country of the customer.
+	 * @param  string $postcode    Postcode of the customer.
+	 * @param  string $current_vat VAT number saved in database.
 	 *
 	 * @return boolean
 	 * @throws Exception For invalid VAT Number.
 	 */
-	public function validate( $vat_number, $billing_country, $billing_postcode = '', $current_vat = '' ) {
+	public function validate( $vat_number, $country, $postcode = '', $current_vat = '' ) {
 		if ( empty( $vat_number ) ) {
 			if ( empty( $current_vat ) ) {
 				throw new Exception( esc_html__( 'VAT number cannot be empty.', 'woocommerce-eu-vat-number' ) );
@@ -231,33 +240,33 @@ class WC_EU_VAT_My_Account {
 			return true;
 		}
 
-		if ( empty( $billing_country ) ) {
+		if ( empty( $country ) ) {
+			$country_type = wc_eu_vat_use_shipping_country() ? __( 'shipping', 'woocommerce-eu-vat-number' ) : __( 'billing', 'woocommerce-eu-vat-number' );
 			/* translators: 1: VAT Number */
 			throw new Exception(
 				sprintf(
-					// translators: %1$s VAT number field label.
-					esc_html__( '%1$s can not be validated because the billing country is missing. Please update your billing address.', 'woocommerce-eu-vat-number' ),
-					'<strong>' . esc_html( get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) ) . '</strong>'
+					// translators: %1$s VAT number field label, %2$s Country type.
+					esc_html__( '%1$s can not be validated because the %2$s country is missing. Please update your %2$s address.', 'woocommerce-eu-vat-number' ),
+					'<strong>' . esc_html( get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) ) . '</strong>',
+					esc_html( $country_type )
 				)
 			);
 		}
 
-		$valid = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $billing_country, $billing_postcode );
+		$valid = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
 
 		if ( is_wp_error( $valid ) ) {
 			throw new Exception( esc_html( $valid->get_error_message() ) );
 		}
 
 		if ( ! $valid ) {
-			// translators: %1$s VAT number field label, %2$s VAT number, %3$s Billing Country.
 			throw new Exception(
 				sprintf(
-					/* translators: %1$s - VAT field label, %2$s - VAT number, %2$s - billing country */
-					esc_html__( 'You have entered an invalid %1$s (%2$s) for your billing country (%3$s).', 'woocommerce-eu-vat-number' ),
-					esc_html( get_option( 'woocommerce_eu_vat_number_field_label' ) ),
-					esc_html__( 'VAT number', 'woocommerce-eu-vat-number' ),
+					/* translators: %1$s VAT number field label, %2$s VAT number, %3$s Country.*/
+					esc_html__( 'You have entered an invalid %1$s (%2$s) for your country (%3$s).', 'woocommerce-eu-vat-number' ),
+					esc_html( get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) ),
 					esc_html( $vat_number ),
-					esc_html( $billing_country )
+					esc_html( $country )
 				)
 			);
 		}
@@ -273,17 +282,26 @@ class WC_EU_VAT_My_Account {
 			return;
 		}
 
-		if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'woocommerce-edit_vat_number' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'woocommerce-edit_vat_number' ) ) {
 			try {
-				$current_user_id  = get_current_user_id();
-				$vat_number       = isset( $_POST['vat_number'] ) ? wc_clean( wp_unslash( $_POST['vat_number'] ) ) : '';
-				$posted_vat       = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
-				$user             = get_userdata( $current_user_id );
-				$current_vat      = $user->vat_number;
-				$billing_country  = $user->billing_country;
-				$billing_postcode = $user->billing_postcode;
+				$current_user_id   = get_current_user_id();
+				$vat_number        = isset( $_POST['vat_number'] ) ? wc_clean( wp_unslash( $_POST['vat_number'] ) ) : '';
+				$posted_vat        = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
+				$user              = get_userdata( $current_user_id );
+				$current_vat       = $user->vat_number;
+				$billing_country   = $user->billing_country;
+				$billing_postcode  = $user->billing_postcode;
+				$shipping_country  = $user->shipping_country ? $user->shipping_country : $billing_country;
+				$shipping_postcode = $user->shipping_postcode;
 
-				$this->validate( $posted_vat, $billing_country, $billing_postcode, $current_vat );
+				$country  = $billing_country;
+				$postcode = $billing_postcode;
+				if ( wc_eu_vat_use_shipping_country() ) {
+					$country  = $shipping_country;
+					$postcode = $shipping_postcode;
+				}
+
+				$this->validate( $posted_vat, $country, $postcode, $current_vat );
 
 				update_user_meta( $current_user_id, 'vat_number', $posted_vat );
 				update_user_meta( $current_user_id, 'billing_vat_number', $posted_vat );

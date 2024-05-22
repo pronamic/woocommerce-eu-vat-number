@@ -47,13 +47,24 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 	 * @param \WP_REST_Request $request  Full details about the request.
 	 */
 	public function set_vat_session_data( $customer, $request ) {
-		$params = $request->get_body_params();
+		$params               = $request->get_body_params();
+		$use_shipping_country = wc_eu_vat_use_shipping_country();
+		$needs_shipping       = WC()->cart ? WC()->cart->needs_shipping_address() : false;
 
-		if ( ! ( isset( $params['billing_address'] ) && isset( $params['billing_address']['country'] ) ) ) {
-			return;
+		if ( $use_shipping_country && $needs_shipping ) {
+			if ( ! ( isset( $params['shipping_address'] ) && isset( $params['shipping_address']['country'] ) ) ) {
+				return;
+			}
+
+			$country = $params['shipping_address']['country'];
+		} else {
+			if ( ! ( isset( $params['billing_address'] ) && isset( $params['billing_address']['country'] ) ) ) {
+				return;
+			}
+
+			$country = $params['billing_address']['country'];
 		}
 
-		$country                = $params['billing_address']['country'];
 		$vat_prefix             = WC_EU_VAT_Number::get_vat_number_prefix( $country );
 		$country_codes_patterns = WC_EU_VAT_Number::get_country_code_patterns();
 
@@ -228,8 +239,18 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			return $data;
 		}
 
-		$country      = WC()->customer->get_billing_country();
-		$postcode     = WC()->customer->get_billing_postcode();
+		$needs_shipping       = WC()->cart ? WC()->cart->needs_shipping_address() : false;
+		$use_shipping_country = wc_eu_vat_use_shipping_country();
+		$billing_country      = WC()->customer->get_billing_country();
+		$shipping_country     = WC()->customer->get_shipping_country() ? WC()->customer->get_shipping_country() : $billing_country;
+
+		$country  = $billing_country;
+		$postcode = WC()->customer->get_billing_postcode();
+		if ( $use_shipping_country && $needs_shipping ) {
+			$country  = $shipping_country;
+			$postcode = WC()->customer->get_shipping_postcode() ? WC()->customer->get_shipping_postcode() : $postcode;
+		}
+
 		$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
 		$valid        = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
 

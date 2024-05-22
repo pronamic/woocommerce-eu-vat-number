@@ -77,3 +77,14 @@ function wc_eu_vat_maybe_add_zero_tax_display( $total_rows, $order, $tax_display
 
 	return $total_rows;
 }
+
+/**
+ * Get whether to use shipping country for VAT validation.
+ *
+ * @since 2.9.4
+ *
+ * @return bool
+ */
+function wc_eu_vat_use_shipping_country() {
+	return 'yes' === get_option( 'woocommerce_eu_vat_number_use_shipping_country', 'yes' );
+}

@@ -27,6 +27,8 @@ class WC_EU_VAT_Admin {
 	public static function init() {
 		self::$settings = require_once 'data/eu-vat-number-settings.php';
 		add_action( 'woocommerce_admin_billing_fields', array( __CLASS__, 'admin_billing_fields' ) );
+		add_action( 'woocommerce_admin_shipping_fields', array( __CLASS__, 'admin_shipping_fields' ) );
+		add_filter( 'woocommerce_order_get__shipping_vat_number', array( __CLASS__, 'get_vat_number_from_order' ), 10, 2 );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_boxes' ), 30 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'styles_and_scripts' ) );
 		add_action( 'woocommerce_settings_tax_options_end', array( __CLASS__, 'admin_settings' ) );
@@ -55,6 +57,55 @@ class WC_EU_VAT_Admin {
 	 * @return array
 	 */
 	public static function admin_billing_fields( $fields ) {
+		global $theorder;
+		if ( ! wc_eu_vat_use_shipping_country() ) {
+			return self::add_vat_number_field( $fields );
+		} elseif ( $theorder && $theorder->has_billing_address() && ! $theorder->has_shipping_address() ) {
+			return self::add_vat_number_field( $fields );
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Add VAT Number fields to admin. This also handles save.
+	 *
+	 * @param  array $fields Fields being shown in admin.
+	 * @return array
+	 */
+	public static function admin_shipping_fields( $fields ) {
+		global $theorder;
+
+		if ( wc_eu_vat_use_shipping_country() ) {
+			if ( $theorder && $theorder->has_billing_address() && ! $theorder->has_shipping_address() ) {
+				return $fields;
+			}
+
+			return self::add_vat_number_field( $fields );
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Get VAT Number from order for shipping address edit form.
+	 *
+	 * @param string   $value The VAT Number value in DB.
+	 * @param WC_Order $order The order object.
+	 * @return string
+	 */
+	public static function get_vat_number_from_order( $value, $order ) {
+		$value = is_object( $order ) ? wc_eu_vat_get_vat_from_order( $order ) : $value;
+		return $value;
+	}
+
+	/**
+	 * Add VAT Number fields to admin. This also handles save.
+	 *
+	 * @param  array $fields Fields being shown in admin.
+	 * @return array
+	 */
+	public static function add_vat_number_field( $fields ) {
 		global $theorder;
 
 		$vat_number = is_object( $theorder ) ? wc_eu_vat_get_vat_from_order( $theorder ) : '';
@@ -125,7 +176,11 @@ class WC_EU_VAT_Admin {
 	 * @return boolean
 	 */
 	protected static function is_eu_order( $order ) {
-		return in_array( $order->get_billing_country(), WC_EU_VAT_Number::get_eu_countries(), true );
+		$country = $order->get_billing_country();
+		if ( $order && $order->has_shipping_address() && $order->get_shipping_country() && wc_eu_vat_use_shipping_country() ) {
+			$country = $order->get_shipping_country();
+		}
+		return in_array( $country, WC_EU_VAT_Number::get_eu_countries(), true );
 	}
 
 	/**
@@ -331,9 +386,10 @@ class WC_EU_VAT_Admin {
 		 * address form (adding new order). If it is not
 		 * found, get it from the order (editing the order).
 		 */
-		$billing_country  = isset( $_POST['_billing_country'] ) ? wc_clean( wp_unslash( $_POST['_billing_country'] ) ) : $order->get_billing_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$shipping_country = isset( $_POST['_shipping_country'] ) ? wc_clean( wp_unslash( $_POST['_shipping_country'] ) ) : $order->get_shipping_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$billing_postcode = isset( $_POST['_billing_postcode'] ) ? wc_clean( wp_unslash( $_POST['_billing_postcode'] ) ) : $order->get_billing_postcode(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$billing_country   = isset( $_POST['_billing_country'] ) ? wc_clean( wp_unslash( $_POST['_billing_country'] ) ) : $order->get_billing_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$shipping_country  = isset( $_POST['_shipping_country'] ) ? wc_clean( wp_unslash( $_POST['_shipping_country'] ) ) : $order->get_shipping_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$billing_postcode  = isset( $_POST['_billing_postcode'] ) ? wc_clean( wp_unslash( $_POST['_billing_postcode'] ) ) : $order->get_billing_postcode(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$shipping_postcode = isset( $_POST['_shipping_postcode'] ) ? wc_clean( wp_unslash( $_POST['_shipping_postcode'] ) ) : $order->get_shipping_postcode(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		/*
 		 * First try and get the VAT number from the
@@ -342,12 +398,21 @@ class WC_EU_VAT_Admin {
 		 */
 		$vat_number = isset( $_POST['_billing_vat_number'] ) ? wc_clean( wp_unslash( $_POST['_billing_vat_number'] ) ) : wc_eu_vat_get_vat_from_order( $order ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
+		$country  = $billing_country;
+		$postcode = $billing_postcode;
+		$type     = __( 'billing', 'woocommerce-eu-vat-number' );
+		if ( $order->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
+			$country  = $shipping_country;
+			$postcode = $shipping_postcode;
+			$type     = __( 'shipping', 'woocommerce-eu-vat-number' );
+		}
+
 		// Ignore empty VAT Number and countries outside EU.
-		if ( empty( $vat_number ) || ! in_array( $billing_country, WC_EU_VAT_Number::get_eu_countries(), true ) ) {
+		if ( empty( $vat_number ) || ! in_array( $country, WC_EU_VAT_Number::get_eu_countries(), true ) ) {
 			return;
 		}
 
-		$valid              = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $billing_country, $billing_postcode );
+		$valid              = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
 		$base_country_match = WC_EU_VAT_Number::is_base_country_match( $billing_country, $shipping_country );
 
 		if ( 'no' === get_option( 'woocommerce_eu_vat_number_deduct_in_base', 'yes' ) && $base_country_match ) {
@@ -374,8 +439,8 @@ class WC_EU_VAT_Admin {
 			}
 
 			if ( ! $valid ) {
-				// translators: %1$s VAT number field label, %2$s VAT number, %3$s Billing Country.
-				throw new Exception( sprintf( esc_html__( 'You have entered an invalid %1$s (%2$s) for your billing country (%3$s).', 'woocommerce-eu-vat-number' ), get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ), $vat_number, $billing_country ) );
+				// translators: %1$s VAT number field label, %2$s VAT number, %3$s Country %4$s country type: billing/shipping.
+				throw new Exception( sprintf( esc_html__( 'You have entered an invalid %1$s (%2$s) for your %4$s country (%3$s).', 'woocommerce-eu-vat-number' ), get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ), $vat_number, $country, $type ) );
 			}
 		} catch ( Exception $e ) {
 			$order->update_meta_data( '_vat_number_is_valid', 'false' );
@@ -391,6 +456,14 @@ class WC_EU_VAT_Admin {
 	 * @return array $fields Modified user fields.
 	 */
 	public static function add_customer_meta_fields( $fields ) {
+		if ( wc_eu_vat_use_shipping_country() ) {
+			$fields['shipping']['fields']['vat_number'] = array(
+				'label'       => esc_html__( 'VAT number', 'woocommerce-eu-vat-number' ),
+				'description' => '',
+			);
+
+			return $fields;
+		}
 		$fields['billing']['fields']['vat_number'] = array(
 			'label'       => esc_html__( 'VAT number', 'woocommerce-eu-vat-number' ),
 			'description' => '',
@@ -409,7 +482,8 @@ class WC_EU_VAT_Admin {
 	 * @return array $data Modified user data.
 	 */
 	public static function get_customer_details( $data, $customer, $user_id ) {
-		$data['billing']['vat_number'] = get_user_meta( $user_id, 'vat_number', true );
+		$data['billing']['vat_number']  = get_user_meta( $user_id, 'vat_number', true );
+		$data['shipping']['vat_number'] = get_user_meta( $user_id, 'vat_number', true );
 
 		return $data;
 	}

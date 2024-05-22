@@ -12,6 +12,7 @@ export const useStoreCart = () => {
 		return {
 			cartItems: cartData.items,
 			billingAddress: cartData.billingAddress,
+			shippingAddress: cartData.shippingAddress,
 			extensions: cartData.extensions,
 			needsShipping: cartData.needsShipping,
 		};

@@ -115,6 +115,7 @@ class WC_Non_EU_Sales_Report extends WC_Admin_Report {
 	 */
 	public function get_main_chart() {
 		global $wpdb;
+		$use_shipping_country = wc_eu_vat_use_shipping_country();
 
 		$line_data = $this->get_order_report_data(
 			array(
@@ -175,8 +176,15 @@ class WC_Non_EU_Sales_Report extends WC_Admin_Report {
 					}
 				}
 			} else {
-				$order   = wc_get_order( $data->ID );
-				$country = $order->get_meta( '_billing_country', true );
+				$order      = wc_get_order( $data->ID );
+				$country    = $order->get_meta( '_billing_country', true );
+				$vat_number = $order->get_meta( '_billing_vat_number', true );
+				if ( $use_shipping_country && ! empty( $vat_number ) ) {
+					$shipping_country = $order->get_meta( '_shipping_country', true );
+					if ( ! empty( $shipping_country ) ) {
+						$country = $shipping_country;
+					}
+				}
 
 				if ( $country ) {
 					if ( ! isset( $grouped_tax_rows[ $country ] ) ) {
@@ -244,8 +252,15 @@ class WC_Non_EU_Sales_Report extends WC_Admin_Report {
 					$grouped_tax_rows[ $tax_id ]->refunded_tax_amount += ( wc_round_tax_total( $tax_value ) * -1 );
 				}
 			} else {
-				$order   = wc_get_order( $data->ID );
-				$country = $order->get_meta( '_billing_country', true );
+				$order      = wc_get_order( $data->ID );
+				$country    = $order->get_meta( '_billing_country', true );
+				$vat_number = $order->get_meta( '_billing_vat_number', true );
+				if ( $use_shipping_country && ! empty( $vat_number ) ) {
+					$shipping_country = $order->get_meta( '_shipping_country', true );
+					if ( ! empty( $shipping_country ) ) {
+						$country = $shipping_country;
+					}
+				}
 
 				if ( $country ) {
 					if ( ! isset( $grouped_tax_rows[ $country ] ) ) {
@@ -375,7 +390,7 @@ class WC_Non_EU_Sales_Report extends WC_Admin_Report {
 						<td class="total_row"><?php echo wc_price( $tax_row->tax_amount + $tax_row->refunded_tax_amount ); ?></td>
 					</tr>
 					<?php
-					// phpcs:enable 
+					// phpcs:enable
 				}
 
 				if ( $found ) {

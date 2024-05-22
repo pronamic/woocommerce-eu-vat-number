@@ -8,6 +8,7 @@
 				data._billing_country = $( '#_billing_country' ).val();
 				data._shipping_country = $( '#_shipping_country' ).val();
 				data._billing_postcode = $( '#_billing_postcode' ).val();
+				data._shipping_postcode = $( '#_shipping_postcode' ).val();
 			}
 		}
 	);

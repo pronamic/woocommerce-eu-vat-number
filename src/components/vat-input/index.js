@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /**
  * External dependencies
  */
@@ -22,7 +23,8 @@ const VatInput = ( props ) => {
 		props.validation;
 	const { checkoutExtensionData } = props;
 
-	const { billingAddress, extensions } = useStoreCart();
+	const { billingAddress, shippingAddress, needsShipping, extensions } =
+		useStoreCart();
 	const {
 		b2b_required,
 		eu_countries,
@@ -30,7 +32,14 @@ const VatInput = ( props ) => {
 		input_label,
 		input_description,
 		failure_handler,
-	} = wc_eu_vat_params;
+		use_shipping_country,
+	} = window.wc_eu_vat_params;
+
+	// Get the country from the shipping address if use_shipping_country is true and shipping is required.
+	const country =
+		use_shipping_country && needsShipping
+			? shippingAddress.country
+			: billingAddress.country;
 
 	const {
 		title = __( 'VAT Number', 'woocommerce-eu-vat-number' ),
@@ -53,16 +62,13 @@ const VatInput = ( props ) => {
 		extensions[ 'woocommerce-eu-vat-number' ]?.vat_number
 	);
 
-	const [ required ] = useState(
-		b2b_required === 'yes' &&
-			eu_countries.indexOf( billingAddress.country ) !== -1
+	const [ required, setRequired ] = useState(
+		b2b_required === 'yes' && eu_countries.indexOf( country ) !== -1
 	);
 	const [ available, setAvailable ] = useState(
-		eu_countries.indexOf( billingAddress.country ) !== -1
+		eu_countries.indexOf( country ) !== -1
 	);
-	const [ showGBNotice, setShowGBNotice ] = useState(
-		billingAddress.country === 'GB'
-	);
+	const [ showGBNotice, setShowGBNotice ] = useState( country === 'GB' );
 
 	const textInputId = 'billing_vat_number';
 	const validationErrorId = 'billing_vat_number_error';
@@ -77,6 +83,15 @@ const VatInput = ( props ) => {
 	useEffect( () => {
 		setVat( extensions[ 'woocommerce-eu-vat-number' ]?.vat_number );
 	}, [ extensions[ 'woocommerce-eu-vat-number' ]?.vat_number ] );
+
+	/**
+	 * Sets the VAT field required if the country is in the EU and b2b_required is set to yes.
+	 */
+	useEffect( () => {
+		setRequired(
+			b2b_required === 'yes' && eu_countries.indexOf( country ) !== -1
+		);
+	}, [ b2b_required, country, eu_countries ] );
 
 	/**
 	 * This effect sets location_confirmation, it is required regardless of shouldValidateIp, or else the API will give
@@ -95,9 +110,9 @@ const VatInput = ( props ) => {
 	 * Also update whether the GB Notice should show.
 	 */
 	useEffect( () => {
-		setAvailable( eu_countries.indexOf( billingAddress.country ) !== -1 );
-		setShowGBNotice( billingAddress.country === 'GB' );
-	}, [ eu_countries, billingAddress.country ] );
+		setAvailable( eu_countries.indexOf( country ) !== -1 );
+		setShowGBNotice( country === 'GB' );
+	}, [ eu_countries, country ] );
 
 	/**
 	 * This effect handles setting the validation error immediately.
@@ -118,7 +133,7 @@ const VatInput = ( props ) => {
 				hidden: true,
 			},
 		} );
-	}, [ required, setValidationErrors, validationErrorId ] );
+	}, [ required, setValidationErrors, validationErrorId, vat ] );
 
 	const verifyVat = () => {
 		if ( vat === previousVat ) {
@@ -163,10 +178,7 @@ const VatInput = ( props ) => {
 		if (
 			typeof vat === 'string' &&
 			vat.length > 0 &&
-			( ( ! validateCountryVatNumberFormat(
-				billingAddress.country,
-				vat
-			) &&
+			( ( ! validateCountryVatNumberFormat( country, vat ) &&
 				failure_handler === 'reject' ) ||
 				( ! extensions[ 'woocommerce-eu-vat-number' ]?.validation
 					?.valid &&

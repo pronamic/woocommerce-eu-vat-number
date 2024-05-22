@@ -74,6 +74,13 @@ $wc_eu_vat_settings = array(
 		),
 	),
 	array(
+		'name'    => __( 'Use shipping address for validation', 'woocommerce-eu-vat-number' ),
+		'desc'    => __( 'Always use the customer shipping address country for VAT Number validation.', 'woocommerce-eu-vat-number' ),
+		'id'      => 'woocommerce_eu_vat_number_use_shipping_country',
+		'type'    => 'checkbox',
+		'default' => 'yes',
+	),
+	array(
 		'name'            => __( 'Enable B2B Transactions', 'woocommerce-eu-vat-number' ),
 		'desc'            => __( 'This will force users to check out with a VAT number, useful for sites that transact purely from B2B.', 'woocommerce-eu-vat-number' ),
 		'id'              => 'woocommerce_eu_vat_number_b2b',
@@ -99,7 +106,7 @@ $wc_eu_vat_settings = array(
 		'type'  => 'title',
 		'title' => __( 'EU VAT Digital Goods Handling', 'woocommerce-eu-vat-number' ),
 		/* translators: %1$s Opening anchor tag, %2$s Closing anchor tag */
-		'desc'  => sprintf( __( 'EU VAT laws are changing for digital goods from the 1st Jan 2015 (affecting B2C transactions only). The VAT on digital goods must be calculated based on the customer location, and you need to collect evidence of this (IP address and Billing Address). You also need to setup VAT rates to charge the correct amount. %1$sRead this guide%2$s for instructions on doing this.', 'woocommerce-eu-vat-number' ), '<a href="https://docs.woocommerce.com/document/setting-up-eu-vat-rates-for-digital-products">', '</a>' ),
+		'desc'  => sprintf( __( 'As of January 1st, 2015, EU VAT laws have been changed for digital goods (affecting B2C transactions only). The VAT on digital goods must be calculated based on the customer location, and you need to collect evidence of this (IP address and Billing Address). You also need to setup VAT rates to charge the correct amount. %1$sRead this guide%2$s for instructions on doing this.', 'woocommerce-eu-vat-number' ), '<a href="https://docs.woocommerce.com/document/setting-up-eu-vat-rates-for-digital-products">', '</a>' ),
 		'id'    => 'vat_number_digital_goods',
 	),
 	array(

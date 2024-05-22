@@ -1,5 +1,11 @@
 *** EU VAT Number Changelog ***
 
+2024-05-20 - version 2.9.4
+* Add - "Use shipping address for validation" setting to choose the address for VAT number validation.
+* Dev - Bump WooCommerce "tested up to" version 8.9.
+* Dev - Bump WooCommerce minimum supported version to 8.7.
+* Update - Change the messaging around EU VAT laws.
+
 2024-04-22 - version 2.9.3
 * Add - Show an admin notice letting users know to adjust the position of the VAT number field in the Checkout Block.
 * Dev - Bump WooCommerce "tested up to" version 8.8.

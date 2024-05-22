@@ -137,6 +137,11 @@ class WC_EU_VAT_Report_EC_Sales_List extends WC_Admin_Report {
 						'function' => '',
 						'name'     => '_billing_country',
 					),
+					'_shipping_country'   => array(
+						'type'     => 'meta',
+						'function' => '',
+						'name'     => '_shipping_country',
+					),
 					'_order_currency'     => array(
 						'type'     => 'meta',
 						'function' => '',
@@ -144,11 +149,6 @@ class WC_EU_VAT_Report_EC_Sales_List extends WC_Admin_Report {
 					),
 				),
 				'where'        => array(
-					array(
-						'key'      => 'meta__billing_country.meta_value',
-						'value'    => WC_EU_VAT_Number::get_eu_countries(),
-						'operator' => 'in',
-					),
 					array(
 						'key'      => 'meta__billing_vat_number.meta_value',
 						'value'    => '',
@@ -165,33 +165,33 @@ class WC_EU_VAT_Report_EC_Sales_List extends WC_Admin_Report {
 		$ec_sales2 = $this->get_order_report_data(
 			array(
 				'data'         => array(
-					'_order_total'     => array(
+					'_order_total'      => array(
 						'type'     => 'meta',
 						'function' => 'SUM',
 						'name'     => 'total_sales',
 					),
-					'_vat_number'      => array(
+					'_vat_number'       => array(
 						'type'     => 'meta',
 						'function' => '',
 						'name'     => '_vat_number',
 					),
-					'_billing_country' => array(
+					'_billing_country'  => array(
 						'type'     => 'meta',
 						'function' => '',
 						'name'     => '_billing_country',
 					),
-					'_order_currency'  => array(
+					'_shipping_country' => array(
+						'type'     => 'meta',
+						'function' => '',
+						'name'     => '_shipping_country',
+					),
+					'_order_currency'   => array(
 						'type'     => 'meta',
 						'function' => '',
 						'name'     => '_order_currency',
 					),
 				),
 				'where'        => array(
-					array(
-						'key'      => 'meta__billing_country.meta_value',
-						'value'    => WC_EU_VAT_Number::get_eu_countries(),
-						'operator' => 'in',
-					),
 					array(
 						'key'      => 'meta__vat_number.meta_value',
 						'value'    => '',
@@ -211,7 +211,8 @@ class WC_EU_VAT_Report_EC_Sales_List extends WC_Admin_Report {
 		<table class="widefat">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Country', 'woocommerce-eu-vat-number' ); ?></th>
+					<th><?php esc_html_e( 'Billing country', 'woocommerce-eu-vat-number' ); ?></th>
+					<th><?php esc_html_e( 'Shipping country', 'woocommerce-eu-vat-number' ); ?></th>
 					<th><?php echo esc_html( get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) ); ?></th>
 					<th class="total_row"><?php esc_html_e( 'Value', 'woocommerce-eu-vat-number' ); ?></th>
 				</tr>
@@ -220,11 +221,18 @@ class WC_EU_VAT_Report_EC_Sales_List extends WC_Admin_Report {
 				<tbody>
 					<?php
 					foreach ( $ec_sales as $ec_sale ) {
+						if (
+							! in_array( $ec_sale->_billing_country, WC_EU_VAT_Number::get_eu_countries(), true ) &&
+							! in_array( $ec_sale->_shipping_country, WC_EU_VAT_Number::get_eu_countries(), true )
+						) {
+							continue;
+						}
 						$vat_number = ! empty( $ec_sale->_billing_vat_number ) ? $ec_sale->_billing_vat_number : $ec_sale->_vat_number;
 						?>
 						<tr>
 							<th scope="row"><?php echo esc_html( $ec_sale->_billing_country ); ?></th>
-							<th scope="row"><?php echo esc_html( str_replace( $ec_sale->_billing_country, '', $vat_number ) ); ?></th>
+							<th scope="row"><?php echo esc_html( $ec_sale->_shipping_country ); ?></th>
+							<th scope="row"><?php echo esc_html( $vat_number ); ?></th>
 							<th scope="row"><?php echo wc_price( $ec_sale->total_sales, array( 'currency', $ec_sale->_order_currency ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></th>
 						</tr>
 						<?php
