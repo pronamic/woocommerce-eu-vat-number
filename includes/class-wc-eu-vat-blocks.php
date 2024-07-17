@@ -30,7 +30,7 @@ class WC_EU_VAT_Blocks_Integration implements IntegrationInterface {
 	 */
 	public function initialize() {
 		WC_EU_VAT_Number::register_script_with_dependencies( 'wc-blocks-eu-vat-scripts-frontend', 'build/frontend' );
-		WC_EU_VAT_Number::register_script_with_dependencies( 'wc-blocks-eu-vat-scripts-index', 'build/index' );
+		WC_EU_VAT_Number::register_script_with_dependencies( 'wc-blocks-eu-vat-scripts-index', 'build/blocks' );
 	}
 
 

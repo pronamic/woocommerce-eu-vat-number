@@ -1,5 +1,15 @@
 *** EU VAT Number Changelog ***
 
+2024-07-15 - version 2.9.5
+* Dev - Bump WooCommerce "tested up to" version 9.0.
+* Dev - Bump WooCommerce minimum supported version to 8.8.
+* Dev - Bump WordPress "tested up to" version 6.6.
+* Dev - Bump WordPress minimum supported version to 6.4.
+* Dev - Update NPM packages and node version to v20 to modernize developer experience.
+* Fix - Issue with cart being emptied when invalid VAT is removed.
+* Fix - Issue with empty VAT field when the VAT number is stored under My Account > VAT Number.
+* Fix - Undefined javascript variable error.
+
 2024-05-20 - version 2.9.4
 * Add - "Use shipping address for validation" setting to choose the address for VAT number validation.
 * Dev - Bump WooCommerce "tested up to" version 8.9.

@@ -119,9 +119,13 @@ class WC_EU_VAT_Number {
 	 */
 	public static function load_scripts() {
 		if ( is_checkout() ) {
-			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+			$asset_file = require_once WC_EU_ABSPATH . '/build/eu-vat.asset.php';
 
-			wp_enqueue_script( 'wc-eu-vat', WC_EU_VAT_PLUGIN_URL . '/assets/js/eu-vat' . $suffix . '.js', array( 'jquery', 'wc-checkout' ), WC_EU_VAT_VERSION, true );
+			if ( ! is_array( $asset_file ) ) {
+				return;
+			}
+
+			wp_enqueue_script( 'wc-eu-vat', WC_EU_VAT_PLUGIN_URL . '/build/eu-vat.js', array( 'jquery', 'wc-checkout' ), $asset_file['version'], true );
 			self::localize_wc_eu_vat_params( 'wc-eu-vat' );
 		}
 	}

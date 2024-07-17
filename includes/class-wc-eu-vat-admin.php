@@ -153,11 +153,15 @@ class WC_EU_VAT_Admin {
 			$is_order_edit_screen = true;
 		}
 
-		// Load admin style.
-		wp_enqueue_style( 'wc_eu_vat_admin_css', plugins_url( 'assets/css/admin.css', WC_EU_VAT_FILE ), array(), WC_EU_VAT_VERSION );
+		$asset_file = require_once WC_EU_ABSPATH . '/build/admin.asset.php';
 
-		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-		wp_enqueue_script( 'wc-eu-vat-admin', WC_EU_VAT_PLUGIN_URL . '/assets/js/admin' . $suffix . '.js', array( 'jquery' ), WC_EU_VAT_VERSION, true );
+		if ( ! is_array( $asset_file ) ) {
+			return;
+		}
+
+		// Load admin style.
+		wp_enqueue_style( 'wc_eu_vat_admin_css', WC_EU_VAT_PLUGIN_URL . '/build/admin.css', array(), $asset_file['version'] );
+		wp_enqueue_script( 'wc-eu-vat-admin', WC_EU_VAT_PLUGIN_URL . '/build/admin.js', $asset_file['dependencies'], $asset_file['version'], true );
 
 		wp_localize_script(
 			'wc-eu-vat-admin',

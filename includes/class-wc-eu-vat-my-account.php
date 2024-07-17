@@ -67,11 +67,15 @@ class WC_EU_VAT_My_Account {
 			return;
 		}
 
-		$billing_country = WC()->customer->get_billing_country();
-		$is_valid        = false;
+		$country  = WC()->customer->get_billing_country();
+		$is_valid = false;
+
+		if ( WC()->customer->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
+			$country = WC()->customer->get_shipping_country() ?? $country;
+		}
 
 		try {
-			$is_valid = $this->validate( $vat_number, $billing_country );
+			$is_valid = $this->validate( $vat_number, $country );
 		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Ignore Exception.
 		}
@@ -117,7 +121,13 @@ class WC_EU_VAT_My_Account {
 				WC_EU_VAT_Number::maybe_set_vat_exempt( true, $billing_country, $shipping_country );
 			}
 		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Ignore Exception.
+			if ( 'accept' === get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' ) ) {
+				$vat_number_from_session = WC()->session->get( 'vat-number' );
+
+				if ( ! empty( $vat_number_from_session ) ) {
+					WC()->customer->set_is_vat_exempt( true );
+				}
+			}
 		}
 	}
 
