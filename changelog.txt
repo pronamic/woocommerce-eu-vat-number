@@ -1,5 +1,11 @@
 *** EU VAT Number Changelog ***
 
+2024-07-29 - version 2.9.6
+* Dev - Bump WooCommerce "tested up to" version 9.1.
+* Dev - Bump WooCommerce minimum supported version to 8.9.
+* Dev - Add E2E support for both classic and block themes.
+* Dev - Exclude the Woo Comment Hook `@since` sniff.
+
 2024-07-15 - version 2.9.5
 * Dev - Bump WooCommerce "tested up to" version 9.0.
 * Dev - Bump WooCommerce minimum supported version to 8.8.
