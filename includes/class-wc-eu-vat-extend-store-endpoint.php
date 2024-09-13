@@ -254,7 +254,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		$is_valid   = $validation_data['validation']['valid'] ?? false;
 		$error_code = $validation_data['validation']['code'] ?? false;
 
-		if ( ( 'reject' === $fail_handler && ! $is_valid ) || 'api' === $error_code ) {
+		if ( ( 'reject' === $fail_handler && ! $is_valid ) || 'wc-eu-vat-api-error' === $error_code ) {
 			WC()->session->set( 'vat-number', null );
 		}
 
@@ -378,7 +378,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 				case 'accept':
 					$error_code = $validation['validation']['code'] ?? false;
 
-					if ( 'api' !== $error_code ) {
+					if ( 'wc-eu-vat-api-error' !== $error_code ) {
 						WC_EU_VAT_Number::maybe_set_vat_exempt( true, $b_country, $s_country );
 					}
 					break;

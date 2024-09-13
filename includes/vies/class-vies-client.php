@@ -89,7 +89,7 @@ class VIES_Client {
 					$soap_parameters
 				);
 			} catch ( Exception $e ) {
-				return new WP_Error( 'api', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
+				return new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
 			}
 		}
 

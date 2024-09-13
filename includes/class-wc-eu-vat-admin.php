@@ -261,12 +261,16 @@ class WC_EU_VAT_Admin {
 						<td>
 							<?php
 							if ( $data->ip_country ) {
-								echo esc_html( $countries[ $data->billing_country ] ) . ' ';
+								echo esc_html( $countries[ $data->ip_country ] ) . ' ';
 
 								if ( $data->billing_country === $data->ip_country ) {
 									echo '<span style="color:green">&#10004;</span>';
 								} elseif ( $data->self_declared ) {
-									esc_html_e( '(self-declared)', 'woocommerce-eu-vat-number' );
+									printf(
+										'(%s %s)',
+										esc_html__( 'User self-declared country as', 'woocommerce-eu-vat-number' ),
+										esc_html( $countries[ $data->billing_country ] ),
+									);
 								} else {
 									echo '<span style="color:red">&#10008;</span>';
 								}
@@ -702,6 +706,21 @@ class WC_EU_VAT_Admin {
 
 		set_transient( $transient_key, $is_adjusted ? 'yes' : 'no', HOUR_IN_SECONDS );
 		return $is_adjusted;
+	}
+
+	/**
+	 * Get VAT Number field label.
+	 *
+	 * @return string
+	 */
+	public static function get_vat_number_field_label() {
+		$label = get_option( 'woocommerce_eu_vat_number_field_label' );
+
+		if ( empty( $label ) ) {
+			return _x( 'VAT number', 'Default Field Label', 'woocommerce-eu-vat-number' );
+		}
+
+		return $label;
 	}
 }
 

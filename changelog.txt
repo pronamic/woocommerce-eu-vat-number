@@ -1,5 +1,14 @@
 *** EU VAT Number Changelog ***
 
+2024-09-09 - version 2.9.7
+* Add - Disable reports & display a notice when HPOS is enabled & syncing is disabled.
+* Fix - Ensure the proper IP country is shown in the EU VAT section of the order screen.
+* Fix - Ensure the VAT Number Field Label can be properly translated.
+* Dev - Bump WooCommerce "tested up to" version 9.2.
+* Dev - Bump WooCommerce minimum supported version to 9.0.
+* Dev - Log API errors to improve debugging.
+* Dev - Fix QIT E2E tests and add support for a few new test types.
+
 2024-07-29 - version 2.9.6
 * Dev - Bump WooCommerce "tested up to" version 9.1.
 * Dev - Bump WooCommerce minimum supported version to 8.9.
