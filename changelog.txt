@@ -1,5 +1,12 @@
 *** EU VAT Number Changelog ***
 
+2024-10-14 - version 2.9.8
+* Fix - Prevent unnecessary SOAP requests if the VAT number is incomplete.
+* Fix - Ensure the VAT Number tab works as an endpoint URL.
+* Dev - Bump WooCommerce "tested up to" version 9.4.
+* Dev - Bump WooCommerce minimum supported version to 9.2.
+* Dev - Bump WordPress minimum supported version to 6.5.
+
 2024-09-09 - version 2.9.7
 * Add - Disable reports & display a notice when HPOS is enabled & syncing is disabled.
 * Fix - Ensure the proper IP country is shown in the EU VAT section of the order screen.

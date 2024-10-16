@@ -35,7 +35,8 @@ class WC_EU_VAT_My_Account {
 
 		// New endpoint for vat-number WC >= 2.6.
 		add_action( 'init', array( $this, 'add_endpoints' ) );
-		add_filter( 'woocommerce_get_query_vars', array( $this, 'add_query_vars' ), 0 );
+		add_filter( 'woocommerce_get_query_vars', array( $this, 'add_query_vars' ) );
+		add_filter( 'woocommerce_endpoint_' . $this->endpoint . '_title', array( $this, 'update_endpoint_title' ) );
 
 		// Change My Account page title.
 		add_filter( 'the_title', array( $this, 'endpoint_title' ) );
@@ -151,9 +152,24 @@ class WC_EU_VAT_My_Account {
 	 * @return array
 	 */
 	public function add_query_vars( $vars ) {
-		$vars[] = $this->endpoint;
+		$vars[ $this->endpoint ] = $this->endpoint;
 
 		return $vars;
+	}
+
+	/**
+	 * Update endpoint title.
+	 *
+	 * @since 2.9.8
+	 *
+	 * @param string $title Endpoint title.
+	 *
+	 * @return string
+	 */
+	public function update_endpoint_title( $title ) {
+		$title = get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) );
+
+		return $title;
 	}
 
 	/**

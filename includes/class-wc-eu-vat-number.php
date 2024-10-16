@@ -351,6 +351,10 @@ class WC_EU_VAT_Number {
 			$vat_prefix = 'XI';
 		}
 
+		if ( empty( $vat_number_formatted ) ) {
+			return new WP_Error( 'wc-eu-vat-api-error', __( 'The VAT number is incomplete.', 'woocommerce-eu-vat-number' ) );
+		}
+
 		// Return error if VAT Country Code doesn't match or exist.
 		if ( ! isset( self::$country_codes_patterns[ $vat_prefix ] ) || ( $vat_prefix . $vat_number_formatted !== $vat_number ) ) {
 			// translators: %1$s - VAT number field label, %2$s - VAT Number from user, %3$s - Billing country.
