@@ -469,14 +469,25 @@ class WC_EU_VAT_Number {
 		$base_country       = WC()->countries->get_base_country();
 		$tax_based_on       = get_option( 'woocommerce_tax_based_on', 'billing' );
 		$base_country_is_uk = in_array( $base_country, array( 'GB', 'IM' ), true );
+		$base_country_is_fr = in_array( $base_country, array( 'FR', 'MC' ), true );
 
 		if ( 'billing' === $tax_based_on ) {
 			if ( $base_country_is_uk && in_array( $billing_country, array( 'GB', 'IM' ), true ) ) {
 				return true;
 			}
+			if ( $base_country_is_fr && in_array( $billing_country, array( 'FR', 'MC' ), true ) ) {
+				return true;
+			}
 			return ( $base_country === $billing_country );
 		} elseif ( 'shipping' === $tax_based_on ) {
+			// Set shipping country from billing country if shipping country is empty (handling digital goods).
+			if ( empty( $shipping_country ) ) {
+				$shipping_country = $billing_country;
+			}
 			if ( $base_country_is_uk && in_array( $shipping_country, array( 'GB', 'IM' ), true ) ) {
+				return true;
+			}
+			if ( $base_country_is_fr && in_array( $shipping_country, array( 'FR', 'MC' ), true ) ) {
 				return true;
 			}
 			return ( $base_country === $shipping_country );

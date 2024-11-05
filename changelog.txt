@@ -1,5 +1,9 @@
 *** EU VAT Number Changelog ***
 
+2024-11-04 - version 2.9.9
+* Fix - Issue with charging VAT when base country is France and buyer's country is Monaco.
+* Fix - Ensure that VAT is calculated properly in the admin for virtual orders when tax calculation and VAT validation are based on the shipping address.
+
 2024-10-14 - version 2.9.8
 * Fix - Prevent unnecessary SOAP requests if the VAT number is incomplete.
 * Fix - Ensure the VAT Number tab works as an endpoint URL.

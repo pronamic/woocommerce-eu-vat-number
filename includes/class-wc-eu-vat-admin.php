@@ -394,8 +394,14 @@ class WC_EU_VAT_Admin {
 		 * address form (adding new order). If it is not
 		 * found, get it from the order (editing the order).
 		 */
-		$billing_country   = isset( $_POST['_billing_country'] ) ? wc_clean( wp_unslash( $_POST['_billing_country'] ) ) : $order->get_billing_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$shipping_country  = isset( $_POST['_shipping_country'] ) ? wc_clean( wp_unslash( $_POST['_shipping_country'] ) ) : $order->get_shipping_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$billing_country  = isset( $_POST['_billing_country'] ) ? wc_clean( wp_unslash( $_POST['_billing_country'] ) ) : $order->get_billing_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$shipping_country = isset( $_POST['_shipping_country'] ) ? wc_clean( wp_unslash( $_POST['_shipping_country'] ) ) : $order->get_shipping_country(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		// Set shipping country from billing country if shipping country is empty (handling digital goods).
+		if ( empty( $shipping_country ) ) {
+			$shipping_country = $billing_country;
+		}
+
 		$billing_postcode  = isset( $_POST['_billing_postcode'] ) ? wc_clean( wp_unslash( $_POST['_billing_postcode'] ) ) : $order->get_billing_postcode(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$shipping_postcode = isset( $_POST['_shipping_postcode'] ) ? wc_clean( wp_unslash( $_POST['_shipping_postcode'] ) ) : $order->get_shipping_postcode(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
