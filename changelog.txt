@@ -1,5 +1,8 @@
 *** EU VAT Number Changelog ***
 
+2024-11-18 - version 2.9.10
+* Dev - Bump WordPress "tested up to" version 6.7.
+
 2024-11-04 - version 2.9.9
 * Fix - Issue with charging VAT when base country is France and buyer's country is Monaco.
 * Fix - Ensure that VAT is calculated properly in the admin for virtual orders when tax calculation and VAT validation are based on the shipping address.
