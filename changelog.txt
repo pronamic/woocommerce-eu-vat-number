@@ -1,5 +1,10 @@
 *** EU VAT Number Changelog ***
 
+2024-12-04 - version 2.9.11
+* Fix - Change the priority of our `init` method that is hooked to `plugins_loaded` from the default 10 to 9, ensuring it always fires before `woocommerce_blocks_loaded`.
+* Dev - Bump WooCommerce "tested up to" version 9.5.
+* Dev - Bump WooCommerce minimum supported version to 9.3.
+
 2024-11-18 - version 2.9.10
 * Dev - Bump WordPress "tested up to" version 6.7.
 
