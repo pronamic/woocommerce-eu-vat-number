@@ -1,5 +1,8 @@
 *** EU VAT Number Changelog ***
 
+2025-01-06 - version 2.9.12
+* Fix - Replaced `{vat_id}` placeholder in WooCommerce Blocks checkout address cards.
+
 2024-12-04 - version 2.9.11
 * Fix - Change the priority of our `init` method that is hooked to `plugins_loaded` from the default 10 to 9, ensuring it always fires before `woocommerce_blocks_loaded`.
 * Dev - Bump WooCommerce "tested up to" version 9.5.
