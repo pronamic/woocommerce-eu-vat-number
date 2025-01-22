@@ -2,10 +2,10 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 2.9.12\n"
+"Project-Id-Version: WooCommerce EU VAT Number 2.9.13\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/woocommerce-eu-vat-number\n"
-"POT-Creation-Date: 2025-01-06 16:05:02+00:00\n"
+"POT-Creation-Date: 2025-01-20 13:49:21+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -16,9 +16,9 @@ msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:114
 #: includes/class-wc-eu-vat-admin.php:241
-#: includes/class-wc-eu-vat-admin.php:457
-#: includes/class-wc-eu-vat-admin.php:475
+#: includes/class-wc-eu-vat-admin.php:464
 #: includes/class-wc-eu-vat-admin.php:482
+#: includes/class-wc-eu-vat-admin.php:489
 #: includes/class-wc-eu-vat-my-account.php:170
 #: includes/class-wc-eu-vat-my-account.php:189
 #: includes/class-wc-eu-vat-my-account.php:211
@@ -27,15 +27,15 @@ msgstr ""
 #: includes/class-wc-eu-vat-number.php:224
 #: includes/class-wc-eu-vat-number.php:852
 #: includes/class-wc-eu-vat-number.php:875
-#: includes/class-wc-eu-vat-privacy.php:147
+#: includes/class-wc-eu-vat-privacy.php:157
 #: includes/class-wc-eu-vat-report-ec-sales-list.php:216
 #: templates/my-account/my-vat-number.php:22
 msgid "VAT number"
 msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:134
-#: includes/class-wc-eu-vat-admin.php:325
-#: includes/class-wc-eu-vat-privacy.php:20
+#: includes/class-wc-eu-vat-admin.php:332
+#: includes/class-wc-eu-vat-privacy.php:30
 msgid "EU VAT"
 msgstr ""
 
@@ -81,35 +81,35 @@ msgstr ""
 msgid "Billing Country"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:357
+#: includes/class-wc-eu-vat-admin.php:364
 msgid "(validation failed)"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:369
+#: includes/class-wc-eu-vat-admin.php:376
 msgid "(self-declared)"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:417
+#: includes/class-wc-eu-vat-admin.php:424
 #: includes/class-wc-eu-vat-my-account.php:270
 #: includes/class-wc-eu-vat-number.php:854
 #: includes/class-wc-eu-vat-number.php:876
 msgid "billing"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:421
+#: includes/class-wc-eu-vat-admin.php:428
 #: includes/class-wc-eu-vat-my-account.php:270
 #: includes/class-wc-eu-vat-number.php:854
 #: includes/class-wc-eu-vat-number.php:876
 msgid "shipping"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:457
+#: includes/class-wc-eu-vat-admin.php:464
 #. translators: %1$s VAT number field label, %2$s VAT number, %3$s Country %4$s
 #. country type: billing/shipping.
 msgid "You have entered an invalid %1$s (%2$s) for your %4$s country (%3$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:562
+#: includes/class-wc-eu-vat-admin.php:569
 #. translators: %1$s Opening strong tag, %2$s Closing strong tag, %3$s Break
 #. tag.
 msgid ""
@@ -121,7 +121,7 @@ msgid ""
 "from %1$sNorthern Ireland%2$s."
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:573
+#: includes/class-wc-eu-vat-admin.php:580
 #. translators: %1$s Opening strong tag, %2$s Closing strong tag.
 msgid ""
 "By using %1$sWooCommerce EU VAT Number%2$s plugin, you've agreed that the "
@@ -130,11 +130,11 @@ msgid ""
 "tax specific questions."
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:578
+#: includes/class-wc-eu-vat-admin.php:585
 msgid "I understand"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:649
+#: includes/class-wc-eu-vat-admin.php:656
 #. translators: %1$s - <strong>, %2$s - </strong>, %3$s - Link to edit checkout
 #. page, %4$s - closing tag
 msgid ""
@@ -236,21 +236,21 @@ msgid ""
 "your billing country using the checkbox below."
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:22
-#: includes/class-wc-eu-vat-privacy.php:26
+#: includes/class-wc-eu-vat-privacy.php:32
+#: includes/class-wc-eu-vat-privacy.php:36
 msgid "WooCommerce EU VAT Order Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:23
-#: includes/class-wc-eu-vat-privacy.php:25
+#: includes/class-wc-eu-vat-privacy.php:33
+#: includes/class-wc-eu-vat-privacy.php:35
 msgid "WooCommerce EU VAT Customer Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:29
+#: includes/class-wc-eu-vat-privacy.php:39
 msgid "WooCommerce EU VAT Subscriptions Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:74
+#: includes/class-wc-eu-vat-privacy.php:84
 #. translators: Privacy Docs URL.
 msgid ""
 "By using this extension, you may be storing personal data or sharing data "
@@ -259,31 +259,31 @@ msgid ""
 "policy.</a>"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:99
+#: includes/class-wc-eu-vat-privacy.php:109
 msgid "Orders"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:103
+#: includes/class-wc-eu-vat-privacy.php:113
 msgid "EU VAT number"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:107
+#: includes/class-wc-eu-vat-privacy.php:117
 msgid "EU Billing VAT number"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:111
+#: includes/class-wc-eu-vat-privacy.php:121
 msgid "EU VAT country"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:143
+#: includes/class-wc-eu-vat-privacy.php:153
 msgid "Customer Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:181
+#: includes/class-wc-eu-vat-privacy.php:191
 msgid "EU VAT User Data Erased."
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:287
+#: includes/class-wc-eu-vat-privacy.php:297
 #. translators: Post type, Order ID.
 msgid "Removed EU VAT data from %1$s %2$s."
 msgstr ""
@@ -393,15 +393,15 @@ msgid ""
 "synchronization%3$s if you wish to use EU VAT reports."
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:101
+#: includes/class-wc-eu-vat-reports.php:106
 msgid "EC Sales List"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:107
+#: includes/class-wc-eu-vat-reports.php:112
 msgid "EU VAT by state"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:113
+#: includes/class-wc-eu-vat-reports.php:118
 msgid "Non EU Sales"
 msgstr ""
 
@@ -621,7 +621,7 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:507
+#: woocommerce-eu-vat-number.php:511
 msgid "VAT Number"
 msgstr ""
 
@@ -649,7 +649,7 @@ msgstr ""
 msgid "https://woocommerce.com/"
 msgstr ""
 
-#: includes/class-wc-eu-vat-admin.php:726
+#: includes/class-wc-eu-vat-admin.php:733
 #: includes/data/eu-vat-number-settings.php:45
 #: includes/data/eu-vat-number-settings.php:46
 msgctxt "Default Field Label"

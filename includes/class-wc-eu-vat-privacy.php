@@ -17,7 +17,17 @@ class WC_EU_VAT_Privacy extends WC_Abstract_Privacy {
 	 * Constructor
 	 */
 	public function __construct() {
-		parent::__construct( __( 'EU VAT', 'woocommerce-eu-vat-number' ), 5, 9 );
+		parent::__construct( '', 5, 9 );
+
+		// Initialize data exporters and erasers.
+		add_action( 'init', array( $this, 'register_erasers_exporters' ) );
+	}
+
+	/**
+	 * Initial registration of privacy erasers and exporters.
+	 */
+	public function register_erasers_exporters() {
+		$this->name = __( 'EU VAT', 'woocommerce-eu-vat-number' );
 
 		$this->add_exporter( 'woocommerce-eu-vat-number-order-data', __( 'WooCommerce EU VAT Order Data', 'woocommerce-eu-vat-number' ), array( $this, 'order_data_exporter' ) );
 		$this->add_exporter( 'woocommerce-eu-vat-number-customer-data', __( 'WooCommerce EU VAT Customer Data', 'woocommerce-eu-vat-number' ), array( $this, 'customer_data_exporter' ) );

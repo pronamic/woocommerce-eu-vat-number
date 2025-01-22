@@ -35,12 +35,7 @@ class WC_EU_VAT_Reports {
 			self::$order_util = false;
 		}
 
-		// The EU VAT reports are incompatible with stores running HPOS with syncing disabled.
-		if ( self::is_cot_enabled() && ! self::is_cot_sync_enabled() ) {
-			add_action( 'admin_notices', array( __CLASS__, 'display_hpos_incompatibility_notice' ) );
-			return;
-		}
-
+		add_action( 'admin_notices', array( __CLASS__, 'display_hpos_incompatibility_notice' ) );
 		add_action( 'woocommerce_admin_reports', array( __CLASS__, 'init_reports' ) );
 	}
 
@@ -73,6 +68,11 @@ class WC_EU_VAT_Reports {
 			return;
 		}
 
+		// The EU VAT reports are incompatible with stores running HPOS with syncing disabled.
+		if ( ! self::is_cot_enabled() || self::is_cot_sync_enabled() ) {
+			return;
+		}
+
 		if ( current_user_can( 'activate_plugins' ) ) {
 			/* translators: %1$s: Minimum version %2$s: Plugin page link start %3$s Link end */
 			printf(
@@ -96,6 +96,11 @@ class WC_EU_VAT_Reports {
 	 * @return array
 	 */
 	public static function init_reports( $reports ) {
+		// The EU VAT reports are incompatible with stores running HPOS with syncing disabled.
+		if ( self::is_cot_enabled() && ! self::is_cot_sync_enabled() ) {
+			return $reports;
+		}
+
 		if ( isset( $reports['taxes'] ) ) {
 			$reports['taxes']['reports']['ec_sales_list'] = array(
 				'title'       => __( 'EC Sales List', 'woocommerce-eu-vat-number' ),

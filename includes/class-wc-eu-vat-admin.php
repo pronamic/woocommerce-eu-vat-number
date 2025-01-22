@@ -25,7 +25,7 @@ class WC_EU_VAT_Admin {
 	 * Constructor.
 	 */
 	public static function init() {
-		self::$settings = require_once 'data/eu-vat-number-settings.php';
+		add_action( 'before_woocommerce_init', array( __CLASS__, 'init_form_fields' ) );
 		add_action( 'woocommerce_admin_billing_fields', array( __CLASS__, 'admin_billing_fields' ) );
 		add_action( 'woocommerce_admin_shipping_fields', array( __CLASS__, 'admin_shipping_fields' ) );
 		add_filter( 'woocommerce_order_get__shipping_vat_number', array( __CLASS__, 'get_vat_number_from_order' ), 10, 2 );
@@ -308,6 +308,13 @@ class WC_EU_VAT_Admin {
 		if ( ! $current_section ) {
 			woocommerce_update_options( self::$settings );
 		}
+	}
+
+	/**
+	 * Initialize settings array.
+	 */
+	public static function init_form_fields() {
+		self::$settings = require_once 'data/eu-vat-number-settings.php';
 	}
 
 	/**
