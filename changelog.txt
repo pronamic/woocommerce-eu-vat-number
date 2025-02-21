@@ -1,5 +1,13 @@
 *** EU VAT Number Changelog ***
 
+2025-02-18 - version 2.9.14
+* Fix - VAT application and exemption logic for domestic transactions for shortcode checkout.
+* Fix - Add support for Belgian VAT numbers that begin with `1`.
+* Dev - Bump WooCommerce "tested up to" version 9.7.
+* Dev - Bump WooCommerce minimum supported version to 9.5.
+* Dev - Bump WordPress minimum supported version to 6.6.
+* Dev - Add the WordPress Plugin Check GitHub Action.
+
 2025-01-20 - version 2.9.13
 * Fix - Resolved PHP notice caused by loading localization code too early on WordPress 6.7.0+.
 * Dev - Bump WooCommerce "tested up to" version 9.6.

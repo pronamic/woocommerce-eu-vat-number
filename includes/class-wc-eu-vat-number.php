@@ -32,7 +32,7 @@ class WC_EU_VAT_Number {
 	 */
 	private static $country_codes_patterns = array(
 		'AT' => 'U[A-Z\d]{8}',
-		'BE' => '0\d{9}',
+		'BE' => '[01]\d{9}',
 		'BG' => '\d{9,10}',
 		'CY' => '\d{8}[A-Z]',
 		'CZ' => '\d{8,10}',
@@ -295,6 +295,26 @@ class WC_EU_VAT_Number {
 	}
 
 	/**
+	 * Extract the 2-letter country code from a VAT number.
+	 *
+	 * @param string $vat_number The VAT number to extract the country code from.
+	 *
+	 * @return string|null The 2-letter country code if found, or null if not.
+	 */
+	public static function get_country_code_from_vat( $vat_number ) {
+		// Define the regex pattern.
+		$pattern = '/^[A-Z]{2}/';
+
+		// Perform the regex match.
+		if ( preg_match( $pattern, $vat_number, $matches ) ) {
+			return $matches[0]; // Return the matched country code.
+		}
+
+		// Return null if no match is found.
+		return null;
+	}
+
+	/**
 	 * Remove unwanted chars and the prefix from a VAT number.
 	 *
 	 * @param  string $vat VAT Number.
@@ -494,6 +514,52 @@ class WC_EU_VAT_Number {
 		}
 
 		return in_array( $base_country, array( $billing_country, $shipping_country ), true );
+	}
+
+	/**
+	 * Set tax exception based on the vat number and store country.
+	 *
+	 * @param string $vat_number VAT Number.
+	 * @param string $exempt     Boolean to exempt VAT.
+	 *
+	 * @return void
+	 */
+	public static function maybe_apply_vat_exemption( $vat_number = '', $exempt = null ) {
+		if ( empty( $vat_number ) ) {
+			return;
+		}
+
+		$vat_country_code = self::get_country_code_from_vat( $vat_number );
+
+		if ( ! $vat_country_code ) {
+			return;
+		}
+
+		$store_country_code = WC()->countries->get_base_country();
+
+		/**
+		 * Filters the VAT exception.
+		 *
+		 * @since 2.9.14
+		 *
+		 * @param bool   $exempt             Is VAT exempt?.
+		 * @param bool   $store_country_code Store's location country code.
+		 * @param string $vat_country_code   Country code from the VAT number.
+		 */
+		$exempt             = apply_filters( 'woocommerce_eu_vat_maybe_apply_vat_exemption', $exempt, $store_country_code, $vat_country_code );
+		$is_valid_condition = $exempt;
+
+		$should_deduct_in_base = 'yes' === get_option( 'woocommerce_eu_vat_number_deduct_in_base', 'yes' );
+
+		if ( $vat_country_code === $store_country_code && $should_deduct_in_base ) {
+			$is_valid_condition = true;
+		} elseif ( $vat_country_code === $store_country_code ) {
+			$is_valid_condition = false;
+		}
+
+		if ( $is_valid_condition ) {
+			WC()->customer->set_is_vat_exempt( $exempt );
+		}
 	}
 
 	/**
@@ -834,14 +900,14 @@ class WC_EU_VAT_Number {
 			self::validate( $billing_vat_number, $country, $postcode );
 
 			if ( true === (bool) self::$data['validation']['valid'] ) {
-				self::maybe_set_vat_exempt( true, $billing_country, $shipping_country );
+				self::maybe_apply_vat_exemption( $billing_vat_number, true );
 			} else {
 				switch ( $fail_handler ) {
 					case 'accept_with_vat':
-						self::maybe_set_vat_exempt( false, $billing_country, $shipping_country );
+						self::maybe_apply_vat_exemption( $billing_vat_number, false );
 						break;
 					case 'accept':
-						self::maybe_set_vat_exempt( true, $billing_country, $shipping_country );
+						self::maybe_apply_vat_exemption( $billing_vat_number, true );
 						break;
 					default:
 						if ( false === self::$data['validation']['valid'] ) {

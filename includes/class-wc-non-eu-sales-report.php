@@ -322,7 +322,7 @@ class WC_Non_EU_Sales_Report extends WC_Admin_Report {
 					<th><?php esc_html_e( 'Country', 'woocommerce-eu-vat-number' ); ?></th>
 					<th><?php esc_html_e( 'Code', 'woocommerce-eu-vat-number' ); ?></th>
 					<th><?php esc_html_e( 'Tax Rate', 'woocommerce-eu-vat-number' ); ?></th>
-					<th class="total_row"><?php esc_html_e( 'Amount', 'woocommerce-eu-vat-number-eu-vat' ); ?></th>
+					<th class="total_row"><?php esc_html_e( 'Amount', 'woocommerce-eu-vat-number' ); ?></th>
 					<th class="total_row"><?php esc_html_e( 'Refunded Amount', 'woocommerce-eu-vat-number' ); ?></th>
 					<th class="total_row"><?php esc_html_e( 'Final Amount', 'woocommerce-eu-vat-number' ); ?></th>
 					<th class="total_row"><?php esc_html_e( 'Tax Amount', 'woocommerce-eu-vat-number' ); ?></th>
