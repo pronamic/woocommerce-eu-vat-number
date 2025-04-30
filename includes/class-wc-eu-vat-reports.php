@@ -54,7 +54,21 @@ class WC_EU_VAT_Reports {
 	 * @return bool
 	 */
 	public static function is_cot_sync_enabled() {
-		return self::$order_util && self::$order_util::is_custom_order_tables_in_sync();
+		/*
+		 * Store result in a static to avoid performance hit.
+		 *
+		 * This method makes a complex database query to check if the order tables are in
+		 * sync. For the purposes of this extension, only one check is required so the value
+		 * is cached in a static variable.
+		 *
+		 * @see https://github.com/woocommerce/woocommerce/issues/54860
+		 */
+		static $enabled = null;
+		if ( null !== $enabled ) {
+			return $enabled;
+		}
+		$enabled = self::$order_util && self::$order_util::is_custom_order_tables_in_sync();
+		return $enabled;
 	}
 
 	/**

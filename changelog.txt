@@ -1,5 +1,13 @@
 *** EU VAT Number Changelog ***
 
+2025-04-28 - version 2.9.15
+* Fix - Improve performance of syncing check for HPOS compatibility mode.
+* Dev - Bump WooCommerce "tested up to" version 9.8.
+* Dev - Bump WooCommerce minimum supported version to 9.6.
+* Dev - Use the `@woocommerce/e2e-utils-playwright` NPM package for E2E tests.
+* Dev - Disabled warning checks from WordPress Plugin Check Action.
+* Dev - Update all third-party actions our workflows rely on to use versions based on specific commit hashes.
+
 2025-02-18 - version 2.9.14
 * Fix - VAT application and exemption logic for domestic transactions for shortcode checkout.
 * Fix - Add support for Belgian VAT numbers that begin with `1`.

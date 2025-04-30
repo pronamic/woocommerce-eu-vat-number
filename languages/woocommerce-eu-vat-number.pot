@@ -2,10 +2,10 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 2.9.14\n"
+"Project-Id-Version: WooCommerce EU VAT Number 2.9.15\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/woocommerce-eu-vat-number\n"
-"POT-Creation-Date: 2025-02-18 15:14:58+00:00\n"
+"POT-Creation-Date: 2025-04-28 12:49:43+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -377,13 +377,13 @@ msgstr ""
 msgid "No taxes found in this period"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:80
+#: includes/class-wc-eu-vat-reports.php:94
 #. translators: %1$s: Minimum version %2$s: Plugin page link start %3$s Link
 #. end
 msgid "WooCommerce EU VAT Number - Reports Not Available"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:83
+#: includes/class-wc-eu-vat-reports.php:97
 #. translators: placeholders $1 and $2 are opening <a> tags linking to the
 #. WooCommerce documentation on HPOS and data synchronization. Placeholder $3
 #. is a closing link (<a>) tag.
@@ -393,15 +393,15 @@ msgid ""
 "synchronization%3$s if you wish to use EU VAT reports."
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:106
+#: includes/class-wc-eu-vat-reports.php:120
 msgid "EC Sales List"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:112
+#: includes/class-wc-eu-vat-reports.php:126
 msgid "EU VAT by state"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:118
+#: includes/class-wc-eu-vat-reports.php:132
 msgid "Non EU Sales"
 msgstr ""
 
