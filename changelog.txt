@@ -1,5 +1,10 @@
 *** EU VAT Number Changelog ***
 
+2025-05-27 - version 2.9.16
+* Fix - Ensure that the 'Collect and Validate Evidence' validation works properly for users whose IP address country is in the EU.
+* Dev - Bump WooCommerce "tested up to" version 9.9.
+* Dev - Bump WooCommerce minimum supported version to 9.7.
+
 2025-04-28 - version 2.9.15
 * Fix - Improve performance of syncing check for HPOS compatibility mode.
 * Dev - Bump WooCommerce "tested up to" version 9.8.

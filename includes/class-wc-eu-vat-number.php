@@ -928,37 +928,36 @@ class WC_EU_VAT_Number {
 						break;
 				}
 			}
-		}
+		} elseif ( $doing_checkout ) {
+			// If doing checkout, check for additional conditions.
+			if ( in_array( $country, self::get_eu_countries(), true ) && empty( $billing_vat_number ) && ( 'yes' === $b2b_vat_enabled ) ) {
+				wc_add_notice(
+					sprintf(
+						/* translators: 1: VAT number field label, 2: Address type, 3: Billing country */
+						__( '%1$s is a required field for your %2$s country (%3$s).', 'woocommerce-eu-vat-number' ),
+						'<strong>' . get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) . '</strong>',
+						( $use_shipping_country && $ship_to_different ) ? __( 'shipping', 'woocommerce-eu-vat-number' ) : __( 'billing', 'woocommerce-eu-vat-number' ),
+						$billing_country
+					),
+					'error'
+				);
+			}
 
-		// If doing checkout, check for additional conditions.
-		if ( $doing_checkout ) {
-			if ( in_array( $country, self::get_eu_countries(), true ) && empty( $billing_vat_number ) ) {
-				if ( 'yes' === $b2b_vat_enabled ) {
-					wc_add_notice(
-						sprintf(
-							/* translators: 1: VAT number field label, 2: Address type, 3: Billing country */
-							__( '%1$s is a required field for your %2$s country (%3$s).', 'woocommerce-eu-vat-number' ),
-							'<strong>' . get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ) . '</strong>',
-							( $use_shipping_country && $ship_to_different ) ? __( 'shipping', 'woocommerce-eu-vat-number' ) : __( 'billing', 'woocommerce-eu-vat-number' ),
-							$billing_country
-						),
-						'error'
-					);
-				}
+			if (
+				'yes' === get_option( 'woocommerce_eu_vat_number_validate_ip', 'no' ) &&
+				self::cart_has_digital_goods() &&
+				self::is_self_declaration_required( self::get_ip_country(), $billing_country ) &&
+				empty( $data['location_confirmation'] )
+			) {
 
-				if ( 'yes' === get_option( 'woocommerce_eu_vat_number_validate_ip', 'no' ) && self::cart_has_digital_goods() ) {
-					if ( self::is_self_declaration_required( self::get_ip_country(), $billing_country ) && empty( $data['location_confirmation'] ) ) {
-
-						/**
-						 * Filters the self declared IP address.
-						 *
-						 * @since 2.1.10
-						 */
-						$ip_address = apply_filters( 'wc_eu_vat_self_declared_ip_address', WC_Geolocation::get_ip_address() );
-						/* translators: 1: Ip Address. */
-						wc_add_notice( sprintf( __( 'Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below.', 'woocommerce-eu-vat-number' ), $ip_address, $billing_country ), 'error' );
-					}
-				}
+					/**
+					 * Filters the self declared IP address.
+					 *
+					 * @since 2.1.10
+					 */
+					$ip_address = apply_filters( 'wc_eu_vat_self_declared_ip_address', WC_Geolocation::get_ip_address() );
+					/* translators: 1: Ip Address. */
+					wc_add_notice( sprintf( __( 'Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below.', 'woocommerce-eu-vat-number' ), $ip_address, $billing_country ), 'error' );
 			}
 		}
 	}
