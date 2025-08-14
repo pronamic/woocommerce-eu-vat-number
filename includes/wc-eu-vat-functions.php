@@ -23,7 +23,7 @@ function wc_eu_vat_get_vat_from_order( $order ) {
 		$vat = $order->get_meta( '_vat_number', true ) ? $order->get_meta( '_vat_number', true ) : '';
 	}
 
-	return $vat;
+	return strtoupper( $vat );
 }
 
 /**

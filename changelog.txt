@@ -1,5 +1,16 @@
 *** EU VAT Number Changelog ***
 
+2025-08-04 - version 3.0.0
+* Add - Filter hook, `woocommerce_eu_vat_country_code_patterns`, to support addition of more countries beyond what's currently available in the extension.
+* Fix - Behavioral inconsistencies between Shortcode and Block Checkout.
+* Fix - Validation of VAT numbers on shortcode checkout is now case insensitive.
+* Fix - Resolve issues flagged by WooCommerce's Quality Insights Toolkit (QIT).
+* Fix - Ensure validation errors show properly on WooCommerce v10+.
+* Dev - Bump WooCommerce "tested up to" version 10.0.
+* Dev - Bump WooCommerce minimum supported version to 9.8.
+* Dev - Bump WordPress "tested up to" version 6.8.
+* Dev - Upgrade from Node Sass to Dart Sass.
+
 2025-05-27 - version 2.9.16
 * Fix - Ensure that the 'Collect and Validate Evidence' validation works properly for users whose IP address country is in the EU.
 * Dev - Bump WooCommerce "tested up to" version 9.9.

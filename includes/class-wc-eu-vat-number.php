@@ -43,8 +43,8 @@ class WC_EU_VAT_Number {
 		'ES' => '[A-Z]\d{7}[A-Z]|\d{8}[A-Z]|[A-Z]\d{8}',
 		'FI' => '\d{8}',
 		'FR' => '([A-Z]{2}|[A-Z0-9]{2})\d{9}',
-		'GB' => '\d{9}|\d{12}|(GD|HA)\d{3}',
-		'XI' => '\d{9}|\d{12}|(GD|HA)\d{3}',
+		'GB' => '(\d{9}|\d{12}|(GD|HA)\d{3})',
+		'XI' => '(\d{9}|\d{12}|(GD|HA)\d{3})',
 		'HR' => '\d{11}',
 		'HU' => '\d{8}',
 		'IE' => '[A-Z\d]{8,10}',
@@ -171,6 +171,7 @@ class WC_EU_VAT_Number {
 					'input_description'    => get_option( 'woocommerce_eu_vat_number_field_description', '' ),
 					'failure_handler'      => get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' ),
 					'use_shipping_country' => wc_eu_vat_use_shipping_country(),
+					'country_codes'        => self::get_country_code_patterns(),
 				)
 			);
 	}
@@ -210,7 +211,12 @@ class WC_EU_VAT_Number {
 	 * @return array
 	 */
 	public static function shipping_vat_number_field( $fields ) {
-		$user_id = get_current_user_id();
+		$user_id    = get_current_user_id();
+		$vat_number = WC()->session->get( 'vat_number' );
+
+		if ( empty( $vat_number ) && $user_id > 0 ) {
+			$vat_number = get_user_meta( $user_id, 'vat_number', true );
+		}
 
 		// If on edit address page, unset vat number field.
 		if ( is_wc_endpoint_url( 'edit-address' ) ) {
@@ -222,7 +228,7 @@ class WC_EU_VAT_Number {
 
 		$fields['shipping_vat_number'] = array(
 			'label'       => get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ),
-			'default'     => $user_id > 0 ? get_user_meta( $user_id, 'vat_number', true ) : '',
+			'default'     => $vat_number,
 			'required'    => false,
 			'class'       => array(
 				'form-row-wide',
@@ -244,8 +250,12 @@ class WC_EU_VAT_Number {
 	 * @return array
 	 */
 	public static function vat_number_field( $fields ) {
-		$b2b_vat_enabled = get_option( 'woocommerce_eu_vat_number_b2b', 'no' );
-		$user_id         = get_current_user_id();
+		$user_id    = get_current_user_id();
+		$vat_number = WC()->session->get( 'vat_number' );
+
+		if ( empty( $vat_number ) && $user_id > 0 ) {
+			$vat_number = get_user_meta( $user_id, 'vat_number', true );
+		}
 
 		// If on edit address page, unset vat number field.
 		if ( is_wc_endpoint_url( 'edit-address' ) ) {
@@ -257,7 +267,7 @@ class WC_EU_VAT_Number {
 
 		$fields['billing_vat_number'] = array(
 			'label'       => WC_EU_VAT_Admin::get_vat_number_field_label(),
-			'default'     => $user_id > 0 ? get_user_meta( $user_id, 'vat_number', true ) : '',
+			'default'     => $vat_number,
 			'required'    => false,
 			'class'       => array(
 				'form-row-wide',
@@ -291,7 +301,19 @@ class WC_EU_VAT_Number {
 				$vat_prefix = $country;
 				break;
 		}
-		return $vat_prefix;
+
+		/**
+		 * Filter the VAT prefix.
+		 *
+		 * @since 3.0.0
+		 *
+		 * @hook woocommerce_eu_vat_number_get_vat_number_prefix
+		 *
+		 * @param {string}  $vat_prefix VAT prefix.
+		 *
+		 * @return {string} Filtered VAT prefix.
+		 */
+		return apply_filters( 'woocommerce_eu_vat_number_get_vat_number_prefix', $vat_prefix );
 	}
 
 	/**
@@ -303,7 +325,8 @@ class WC_EU_VAT_Number {
 	 */
 	public static function get_country_code_from_vat( $vat_number ) {
 		// Define the regex pattern.
-		$pattern = '/^[A-Z]{2}/';
+		$pattern    = '/^[A-Z]{2}/';
+		$vat_number = strtoupper( $vat_number );
 
 		// Perform the regex match.
 		if ( preg_match( $pattern, $vat_number, $matches ) ) {
@@ -348,13 +371,13 @@ class WC_EU_VAT_Number {
 	 *
 	 * @param  string $vat_number VAT Number.
 	 * @param  string $country    CountryCode.
-	 * @param  string $postcode   Postcode.
+	 *
 	 * @return bool|WP_Error if valid/not valid, WP_ERROR if validation failed
 	 */
-	public static function vat_number_is_valid( $vat_number, $country, $postcode = '' ) {
+	public static function vat_number_is_valid( $vat_number, $country ) {
 		// The StoreAPI will set $vat_number to null if the user does not enter it. We should show an error in this case.
 		if ( null === $vat_number ) {
-			return new WP_Error( 'wc-eu-vat-api-error', __( 'VAT number is required.', 'woocommerce-eu-vat-number' ) );
+			return false;
 		}
 
 		// Replace unwanted chars on VAT Number.
@@ -367,7 +390,7 @@ class WC_EU_VAT_Number {
 		$cached_result        = get_transient( $transient_name );
 
 		// Keep supporting prefix 'XI' for Northern Ireland.
-		if ( 'GB' === $country && ! empty( $postcode ) && preg_match( '/^(bt).*$/i', $postcode ) && 'XI' === substr( $vat_number, 0, 2 ) ) {
+		if ( 'GB' === $country && 'XI' === substr( $vat_number, 0, 2 ) ) {
 			$vat_prefix = 'XI';
 		}
 
@@ -375,8 +398,10 @@ class WC_EU_VAT_Number {
 			return new WP_Error( 'wc-eu-vat-api-error', __( 'The VAT number is incomplete.', 'woocommerce-eu-vat-number' ) );
 		}
 
+		$country_codes_patterns = self::get_country_code_patterns();
+
 		// Return error if VAT Country Code doesn't match or exist.
-		if ( ! isset( self::$country_codes_patterns[ $vat_prefix ] ) || ( $vat_prefix . $vat_number_formatted !== $vat_number ) ) {
+		if ( ! isset( $country_codes_patterns[ $vat_prefix ] ) || ( $vat_prefix . $vat_number_formatted !== $vat_number ) ) {
 			// translators: %1$s - VAT number field label, %2$s - VAT Number from user, %3$s - Billing country.
 			return new WP_Error( 'wc-eu-vat-api-error', sprintf( __( 'You have entered an invalid country code for %1$s (%2$s) for your country (%3$s).', 'woocommerce-eu-vat-number' ), get_option( 'woocommerce_eu_vat_number_field_label', 'VAT number' ), $vat_number, $country ) );
 		}
@@ -441,7 +466,42 @@ class WC_EU_VAT_Number {
 	 * @return array
 	 */
 	public static function get_country_code_patterns() {
-		return self::$country_codes_patterns;
+		/**
+		 * Filter to support more countries.
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param  array $code_patterns Country code patterns.
+		 *
+		 * @return array Associative array of country codes and their regex patterns.
+		 */
+		$code_patterns = apply_filters( 'woocommerce_eu_vat_country_code_patterns', self::$country_codes_patterns );
+		$result        = array();
+
+		// Just in-case the filtered value is not an array.
+		if ( ! is_array( $code_patterns ) ) {
+			return $result;
+		}
+
+		foreach ( $code_patterns as $country_code => $regex ) {
+			if ( false === @preg_match( '#' . $regex . '#', '' ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				$logger = wc_get_logger();
+				$logger->log(
+					'warning',
+					sprintf(
+						/* translators: %1$s - regex pattern, $2$s - country code. */
+						__( 'The regex pattern %1$s for the country code %2$s is invalid.', 'woocommerce-eu-vat-number' ),
+						$regex,
+						$country_code
+					)
+				);
+				continue;
+			}
+
+			$result[ $country_code ] = $regex;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -459,7 +519,7 @@ class WC_EU_VAT_Number {
 		if ( is_wp_error( $valid ) ) {
 			self::$data['vat_number'] = $vat_number;
 			self::$data['validation'] = array(
-				'valid' => null,
+				'valid' => false,
 				'error' => $valid->get_error_message(),
 			);
 		} else {
@@ -627,18 +687,68 @@ class WC_EU_VAT_Number {
 	 * Show checkbox for customer to confirm their location (location evidence for B2C)
 	 */
 	public static function location_confirmation() {
-		if ( 'yes' === get_option( 'woocommerce_eu_vat_number_validate_ip', 'no' ) && self::cart_has_digital_goods() ) {
-			if ( false === self::$data['vat_number'] && self::is_self_declaration_required() ) {
-				wc_get_template(
-					'location-confirmation-field.php',
-					array(
-						'location_confirmation_is_checked' => isset( $_POST['location_confirmation'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-						'countries'                        => WC()->countries->get_countries(),
-					),
-					'woocommerce-eu-vat-number',
-					untrailingslashit( plugin_dir_path( WC_EU_VAT_FILE ) ) . '/templates/'
-				);
-			}
+		$should_validate_ip  = 'yes' === get_option( 'woocommerce_eu_vat_number_validate_ip', 'no' );
+		$should_self_declare = self::is_self_declaration_required();
+		$has_digital_goods   = self::cart_has_digital_goods();
+		$is_vat_required     = 'yes' === get_option( 'woocommerce_eu_vat_number_b2b', 'no' );
+		$accept_if_invalid   = 'reject' !== get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
+		$vat_number          = self::$data['vat_number'];
+		$is_valid            = $vat_number && self::$data['validation']['valid'];
+
+		/**
+		 * Do nothing if VAT is required as location confirmation is
+		 * only required for B2C transactions and if vat is required,
+		 * that indicates site transacts purely from are B2B.
+		 */
+		if ( $is_vat_required ) {
+			return;
+		}
+
+		// Do nothing if IP validation is not enabled.
+		if ( ! $should_validate_ip ) {
+			return;
+		}
+
+		/**
+		 * Do nothing if user doesn't have to self-declare the location.
+		 * This indicates that the billing country matches the customer's
+		 * country detected via their IP address.
+		 */
+		if ( ! $should_self_declare ) {
+			return;
+		}
+
+		/**
+		 * Do nothing if cart does not have digital goods as
+		 * location confirmation is only required for digital goods.
+		 */
+		if ( ! $has_digital_goods ) {
+			return;
+		}
+
+		/**
+		 * If the VAT number entered is valid, then we don't need to
+		 * show the location confirmation field as this indicates a
+		 * B2B transaction.
+		 */
+		if ( ! empty( $vat_number ) && $is_valid ) {
+			return;
+		}
+
+		/**
+		 * If the Checkout experience is set to reject VAT if wrong, then customer won't be able to
+		 * place an order anyway, so we don't need to show the location confirmation field.
+		 */
+		if ( empty( $vat_number ) || ( $vat_number && ! $is_valid && $accept_if_invalid ) ) {
+			wc_get_template(
+				'location-confirmation-field.php',
+				array(
+					'location_confirmation_is_checked' => isset( $_POST['location_confirmation'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					'countries'                        => WC()->countries->get_countries(),
+				),
+				'woocommerce-eu-vat-number',
+				untrailingslashit( plugin_dir_path( WC_EU_VAT_FILE ) ) . '/templates/'
+			);
 		}
 	}
 
@@ -685,7 +795,7 @@ class WC_EU_VAT_Number {
 
 		self::reset();
 
-		if ( empty( $form_data['billing_country'] ) && empty( $form_data['shipping_country'] ) || ( empty( $form_data['billing_vat_number'] ) && empty( $form_data['shipping_vat_number'] ) ) ) {
+		if ( ( empty( $form_data['billing_country'] ) && empty( $form_data['shipping_country'] ) ) || ( ( empty( $form_data['billing_vat_number'] ) && empty( $form_data['shipping_vat_number'] ) ) ) ) {
 			return;
 		}
 
@@ -824,11 +934,11 @@ class WC_EU_VAT_Number {
 	public static function add_vat_number_to_order_response( $response ) {
 		if ( is_a( $response, 'WP_REST_Response' ) ) {
 			$order                        = wc_get_order( (int) $response->data['id'] );
-			$response->data['vat_number'] = $order->get_meta( '_billing_vat_number', true );
+			$response->data['vat_number'] = wc_eu_vat_get_vat_from_order( $order );
 		} elseif ( is_array( $response ) && ! empty( $response['id'] ) ) {
 			// Legacy endpoint.
 			$order                  = wc_get_order( (int) $response['id'] );
-			$response['vat_number'] = $order->get_meta( '_billing_vat_number', true );
+			$response['vat_number'] = wc_eu_vat_get_vat_from_order( $order );
 		}
 		return $response;
 	}
@@ -869,6 +979,37 @@ class WC_EU_VAT_Number {
 	}
 
 	/**
+	 * Validate the VAT number format.
+	 *
+	 * @param string $vat_number VAT Number.
+	 *
+	 * @return bool|WP_Error
+	 */
+	public static function validate_vat_format( $vat_number = '' ) {
+		$country_code_part = self::get_country_code_from_vat( $vat_number );
+		$country_code      = self::get_vat_number_prefix( $country_code_part );
+		$vat_number        = self::get_formatted_vat_number( $vat_number );
+
+		$supported_country_codes = self::get_eu_countries();
+		$regex_patterns          = self::get_country_code_patterns();
+
+		if ( ! in_array( $country_code, $supported_country_codes, true ) ) {
+			return new WP_Error( 'wc-eu-vat-unsupported-country-error', __( 'The country is not supported.', 'woocommerce-eu-vat-number' ) );
+		}
+
+		$regex_pattern = $regex_patterns[ $country_code ];
+		$regex_pattern = '/^' . $regex_pattern . '$/';
+
+		$is_a_match = preg_match( $regex_pattern, $vat_number, $matches );
+
+		if ( $is_a_match ) {
+			return true;
+		}
+
+		return new WP_Error( 'wc-eu-vat-format-error', __( 'The VAT number format is incorrect.', 'woocommerce-eu-vat-number' ) );
+	}
+
+	/**
 	 * Validate AJAX Order Review / Checkout & add errors if any.
 	 *
 	 * @param array   $data Checkout field data.
@@ -896,11 +1037,24 @@ class WC_EU_VAT_Number {
 			$postcode = $shipping_postcode;
 		}
 
+		if ( ! empty( $billing_vat_number ) ) {
+			$is_format_valid = self::validate_vat_format( $billing_vat_number );
+
+			if ( is_wp_error( $is_format_valid ) ) {
+				wc_add_notice( $is_format_valid->get_error_message(), 'error' );
+				WC()->session->set( 'vat_number', null );
+			}
+		}
+
 		if ( in_array( $country, self::get_eu_countries(), true ) && ! empty( $billing_vat_number ) ) {
 			self::validate( $billing_vat_number, $country, $postcode );
 
 			if ( true === (bool) self::$data['validation']['valid'] ) {
 				self::maybe_apply_vat_exemption( $billing_vat_number, true );
+				WC()->session->set( 'vat_number', $billing_vat_number );
+			} elseif ( ! empty( self::$data['validation']['error'] ) ) {
+				wc_add_notice( self::$data['validation']['error'], 'error' );
+				WC()->session->set( 'vat_number', null );
 			} else {
 				switch ( $fail_handler ) {
 					case 'accept_with_vat':
@@ -924,6 +1078,7 @@ class WC_EU_VAT_Number {
 							);
 						} else {
 							wc_add_notice( self::$data['validation']['error'], 'error' );
+							WC()->session->set( 'vat_number', null );
 						}
 						break;
 				}
@@ -969,13 +1124,19 @@ class WC_EU_VAT_Number {
 	 * @param string $script Script name.
 	 * @param array  $dependencies Additional dependencies.
 	 *
+	 * @throws Exception If the script file could not be read.
 	 * @return void
 	 */
 	public static function register_script_with_dependencies( string $handler, string $script, array $dependencies = array() ) {
+		// Validate that file exists and is readable.
+		if ( ! is_readable( WC_EU_ABSPATH . $script . '.js' ) ) {
+			throw new Exception( esc_html( __( 'The script file could not be read or does not exist at the specified location. Please verify the file path and permissions.', 'woocommerce-eu-vat-number' ) ) );
+		}
+
 		$script_file                  = $script . '.js';
 		$script_src_url               = plugins_url( $script_file, __DIR__ );
 		$script_asset_path            = WC_EU_ABSPATH . $script . '.asset.php';
-		$script_asset                 = file_exists( $script_asset_path ) ? require $script_asset_path : array( 'dependencies' => array() );
+		$script_asset                 = file_exists( $script_asset_path ) ? require $script_asset_path : array( 'dependencies' => array() ); // nosemgrep: audit.php.lang.security.file.inclusion-arg -- already checked above.
 		$script_asset['dependencies'] = array_merge( $script_asset['dependencies'], $dependencies );
 		wp_register_script(
 			$handler,

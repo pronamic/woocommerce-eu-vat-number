@@ -47,43 +47,7 @@ class WC_EU_VAT_My_Account {
 
 		// Save a VAT number from My Account form if one is submitted.
 		add_action( 'init', array( $this, 'save_vat_number' ) );
-
-		add_action( 'woocommerce_init', array( $this, 'set_vat_session_data' ) );
 		add_action( 'woocommerce_init', array( $this, 'maybe_remove_vat' ) );
-	}
-
-	/**
-	 * Sets the VAT session data when the billing country is updated.
-	 *
-	 * @since 2.9.0
-	 */
-	public function set_vat_session_data() {
-		if ( ! is_user_logged_in() ) {
-			return;
-		}
-
-		$vat_number = get_user_meta( get_current_user_id(), 'vat_number', true );
-
-		if ( empty( $vat_number ) || empty( WC()->customer ) ) {
-			return;
-		}
-
-		$country  = WC()->customer->get_billing_country();
-		$is_valid = false;
-
-		if ( WC()->customer->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
-			$country = WC()->customer->get_shipping_country() ?? $country;
-		}
-
-		try {
-			$is_valid = $this->validate( $vat_number, $country );
-		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Ignore Exception.
-		}
-
-		if ( $is_valid && WC()->session ) {
-			WC()->session->set( 'vat-number', $vat_number );
-		}
 	}
 
 	/**
@@ -332,8 +296,12 @@ class WC_EU_VAT_My_Account {
 				update_user_meta( $current_user_id, 'vat_number', $posted_vat );
 				update_user_meta( $current_user_id, 'billing_vat_number', $posted_vat );
 
-				if ( empty( $vat_number ) && WC()->session ) {
-					WC()->session->set( 'vat-number', null );
+				if ( WC()->session ) {
+					if ( empty( $vat_number ) ) {
+						WC()->session->set( 'vat_number', null );
+					} else {
+						WC()->session->set( 'vat_number', $posted_vat );
+					}
 				}
 
 				if ( empty( $posted_vat ) ) {

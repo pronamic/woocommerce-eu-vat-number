@@ -2,10 +2,10 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 2.9.16\n"
+"Project-Id-Version: WooCommerce EU VAT Number 3.0.0\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/woocommerce-eu-vat-number\n"
-"POT-Creation-Date: 2025-05-27 13:52:23+00:00\n"
+"POT-Creation-Date: 2025-08-04 15:48:30+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -19,14 +19,15 @@ msgstr ""
 #: includes/class-wc-eu-vat-admin.php:464
 #: includes/class-wc-eu-vat-admin.php:482
 #: includes/class-wc-eu-vat-admin.php:489
-#: includes/class-wc-eu-vat-my-account.php:170
-#: includes/class-wc-eu-vat-my-account.php:189
-#: includes/class-wc-eu-vat-my-account.php:211
-#: includes/class-wc-eu-vat-my-account.php:276
-#: includes/class-wc-eu-vat-my-account.php:293
-#: includes/class-wc-eu-vat-number.php:224
-#: includes/class-wc-eu-vat-number.php:918
-#: includes/class-wc-eu-vat-number.php:938
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:303
+#: includes/class-wc-eu-vat-my-account.php:134
+#: includes/class-wc-eu-vat-my-account.php:153
+#: includes/class-wc-eu-vat-my-account.php:175
+#: includes/class-wc-eu-vat-my-account.php:240
+#: includes/class-wc-eu-vat-my-account.php:257
+#: includes/class-wc-eu-vat-number.php:230
+#: includes/class-wc-eu-vat-number.php:1072
+#: includes/class-wc-eu-vat-number.php:1093
 #: includes/class-wc-eu-vat-privacy.php:157
 #: includes/class-wc-eu-vat-report-ec-sales-list.php:216
 #: templates/my-account/my-vat-number.php:22
@@ -90,16 +91,18 @@ msgid "(self-declared)"
 msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:424
-#: includes/class-wc-eu-vat-my-account.php:270
-#: includes/class-wc-eu-vat-number.php:920
-#: includes/class-wc-eu-vat-number.php:939
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:305
+#: includes/class-wc-eu-vat-my-account.php:234
+#: includes/class-wc-eu-vat-number.php:1074
+#: includes/class-wc-eu-vat-number.php:1094
 msgid "billing"
 msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:428
-#: includes/class-wc-eu-vat-my-account.php:270
-#: includes/class-wc-eu-vat-number.php:920
-#: includes/class-wc-eu-vat-number.php:939
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:305
+#: includes/class-wc-eu-vat-my-account.php:234
+#: includes/class-wc-eu-vat-number.php:1074
+#: includes/class-wc-eu-vat-number.php:1094
 msgid "shipping"
 msgstr ""
 
@@ -144,60 +147,67 @@ msgid ""
 "Number field accordingly."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:138
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:317
+#: includes/class-wc-eu-vat-blocks.php:62
+#. translators: 1: Script handler, 2: Error message
+msgid "WC EU VAT Number: Failed to register script %1$s: %2$s"
+msgstr ""
+
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:67
 msgid "Invalid VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:228
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:120
 msgid "Location confirmation."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:233
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:125
 msgid "VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:400
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:142
 msgid "VAT Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:263
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:302
+#: includes/class-wc-eu-vat-number.php:1071
+#. translators: 1: VAT number field label, 2: VAT Number, 3: Address type, 4:
+#. Country
+msgid "You have entered an invalid %1$s (%2$s) for your %3$s country (%4$s)."
+msgstr ""
+
+#: includes/class-wc-eu-vat-my-account.php:227
 msgid "VAT number cannot be empty."
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:275
+#: includes/class-wc-eu-vat-my-account.php:239
 #. translators: %1$s VAT number field label, %2$s Country type.
 msgid ""
 "%1$s can not be validated because the %2$s country is missing. Please "
 "update your %2$s address."
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:292
+#: includes/class-wc-eu-vat-my-account.php:256
 #. translators: %1$s VAT number field label, %2$s VAT number, %3$s Country.
 msgid "You have entered an invalid %1$s (%2$s) for your country (%3$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:340
+#: includes/class-wc-eu-vat-my-account.php:308
 msgid "VAT number removed successfully!"
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:342
+#: includes/class-wc-eu-vat-my-account.php:310
 msgid "VAT number saved successfully!"
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:344
+#: includes/class-wc-eu-vat-my-account.php:312
 msgid "VAT number updated successfully!"
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:357
-msgid "VAT number is required."
-msgstr ""
-
-#: includes/class-wc-eu-vat-number.php:375
+#: includes/class-wc-eu-vat-number.php:398
 msgid "The VAT number is incomplete."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:381
+#: includes/class-wc-eu-vat-number.php:406
 #. translators: %1$s - VAT number field label, %2$s - VAT Number from user,
 #. %3$s - Billing country.
 msgid ""
@@ -205,35 +215,48 @@ msgid ""
 "(%3$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:395
-#: includes/class-wc-eu-vat-number.php:413
+#: includes/class-wc-eu-vat-number.php:420
+#: includes/class-wc-eu-vat-number.php:438
 #: includes/vies/class-vies-client.php:92
 msgid "Error communicating with the VAT validation server - please try again."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:774
+#: includes/class-wc-eu-vat-number.php:493
+#. translators: %1$s - regex pattern, $2$s - country code.
+msgid "The regex pattern %1$s for the country code %2$s is invalid."
+msgstr ""
+
+#: includes/class-wc-eu-vat-number.php:884
 #. translators: %s: VAT Number
 msgid "VAT Number: %s"
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:917
-#. translators: 1: VAT number field label, 2: VAT Number, 3: Address type, 4:
-#. Country
-msgid "You have entered an invalid %1$s (%2$s) for your %3$s country (%4$s)."
+#: includes/class-wc-eu-vat-number.php:997
+msgid "The country is not supported."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:937
+#: includes/class-wc-eu-vat-number.php:1009
+msgid "The VAT number format is incorrect."
+msgstr ""
+
+#: includes/class-wc-eu-vat-number.php:1092
 #. translators: 1: VAT number field label, 2: Address type, 3: Billing country
 msgid "%1$s is a required field for your %2$s country (%3$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:960
+#: includes/class-wc-eu-vat-number.php:1115
 #. translators: 1: Ip Address.
 msgid ""
 "Your IP Address (%1$s) does not match your billing country (%2$s). European "
 "VAT laws require your IP address to match your billing country when "
 "purchasing digital goods in the EU. Please confirm you are located within "
 "your billing country using the checkbox below."
+msgstr ""
+
+#: includes/class-wc-eu-vat-number.php:1133
+msgid ""
+"The script file could not be read or does not exist at the specified "
+"location. Please verify the file path and permissions."
 msgstr ""
 
 #: includes/class-wc-eu-vat-privacy.php:32
