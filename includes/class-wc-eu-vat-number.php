@@ -212,7 +212,7 @@ class WC_EU_VAT_Number {
 	 */
 	public static function shipping_vat_number_field( $fields ) {
 		$user_id    = get_current_user_id();
-		$vat_number = WC()->session->get( 'vat_number' );
+		$vat_number = WC() && WC()->session ? WC()->session->get( 'vat_number' ) : '';
 
 		if ( empty( $vat_number ) && $user_id > 0 ) {
 			$vat_number = get_user_meta( $user_id, 'vat_number', true );
@@ -251,7 +251,7 @@ class WC_EU_VAT_Number {
 	 */
 	public static function vat_number_field( $fields ) {
 		$user_id    = get_current_user_id();
-		$vat_number = WC()->session->get( 'vat_number' );
+		$vat_number = WC() && WC()->session ? WC()->session->get( 'vat_number' ) : '';
 
 		if ( empty( $vat_number ) && $user_id > 0 ) {
 			$vat_number = get_user_meta( $user_id, 'vat_number', true );
@@ -989,11 +989,9 @@ class WC_EU_VAT_Number {
 		$country_code_part = self::get_country_code_from_vat( $vat_number );
 		$country_code      = self::get_vat_number_prefix( $country_code_part );
 		$vat_number        = self::get_formatted_vat_number( $vat_number );
+		$regex_patterns    = self::get_country_code_patterns();
 
-		$supported_country_codes = self::get_eu_countries();
-		$regex_patterns          = self::get_country_code_patterns();
-
-		if ( ! in_array( $country_code, $supported_country_codes, true ) ) {
+		if ( ! in_array( $country_code, array_keys( $regex_patterns ), true ) ) {
 			return new WP_Error( 'wc-eu-vat-unsupported-country-error', __( 'The country is not supported.', 'woocommerce-eu-vat-number' ) );
 		}
 

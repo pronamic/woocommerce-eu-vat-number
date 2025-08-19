@@ -1,5 +1,9 @@
 *** EU VAT Number Changelog ***
 
+2025-08-18 - version 3.0.1
+* Fix - Fatal error when trying to access WooCommerce session data.
+* Fix - Issue with applying a Greek VAT number.
+
 2025-08-04 - version 3.0.0
 * Add - Filter hook, `woocommerce_eu_vat_country_code_patterns`, to support addition of more countries beyond what's currently available in the extension.
 * Fix - Behavioral inconsistencies between Shortcode and Block Checkout.
