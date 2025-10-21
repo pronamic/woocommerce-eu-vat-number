@@ -161,19 +161,27 @@ class WC_EU_VAT_Number {
 	 * @param string $script_handle Script handle.
 	 */
 	public static function localize_wc_eu_vat_params( $script_handle ) {
-			wp_localize_script(
-				$script_handle,
-				'wc_eu_vat_params',
-				array(
-					'eu_countries'         => self::get_eu_countries(),
-					'b2b_required'         => get_option( 'woocommerce_eu_vat_number_b2b', 'false' ),
-					'input_label'          => WC_EU_VAT_Admin::get_vat_number_field_label(),
-					'input_description'    => get_option( 'woocommerce_eu_vat_number_field_description', '' ),
-					'failure_handler'      => get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' ),
-					'use_shipping_country' => wc_eu_vat_use_shipping_country(),
-					'country_codes'        => self::get_country_code_patterns(),
-				)
-			);
+		$vat_number  = WC() && WC()->session ? WC()->session->get( 'vat_number' ) : '';
+		$customer_id = get_current_user_id();
+
+		if ( $customer_id && empty( $vat_number ) ) {
+			$vat_number = get_user_meta( $customer_id, 'vat_number', true );
+		}
+
+		wp_localize_script(
+			$script_handle,
+			'wc_eu_vat_params',
+			array(
+				'eu_countries'         => self::get_eu_countries(),
+				'b2b_required'         => get_option( 'woocommerce_eu_vat_number_b2b', 'false' ),
+				'input_label'          => WC_EU_VAT_Admin::get_vat_number_field_label(),
+				'input_description'    => get_option( 'woocommerce_eu_vat_number_field_description', '' ),
+				'failure_handler'      => get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' ),
+				'use_shipping_country' => wc_eu_vat_use_shipping_country(),
+				'country_codes'        => self::get_country_code_patterns(),
+				'saved_vat_number'     => $vat_number,
+			)
+		);
 	}
 
 	/**

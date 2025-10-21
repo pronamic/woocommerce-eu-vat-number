@@ -1,5 +1,14 @@
 *** EU VAT Number Changelog ***
 
+2025-10-20 - version 3.0.2
+* Fix - Accessibility: Announce validation errors for the VAT field on the block checkout screen
+* Fix - Accessibility: Announce field description for the VAT field on the block checkout screen.
+* Dev - Bump WooCommerce "tested up to" version 10.3.
+* Dev - Bump WooCommerce minimum supported version to 10.1.
+* Dev - Bump WordPress minimum supported version to 6.7.
+* Dev - Add new deploy workflow.
+* Dev - Updates to our QIT GitHub Action workflow.
+
 2025-08-18 - version 3.0.1
 * Fix - Fatal error when trying to access WooCommerce session data.
 * Fix - Issue with applying a Greek VAT number.
