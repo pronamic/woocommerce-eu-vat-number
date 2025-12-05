@@ -76,6 +76,12 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$customer->save_meta_data();
 		}
 
+		// We set the customer's self-declared country and the country we think they are from based on their IP.
+		if ( false !== WC_EU_VAT_Number::get_ip_country() ) {
+			$order->update_meta_data( '_customer_ip_country', WC_EU_VAT_Number::get_ip_country() );
+			$order->update_meta_data( '_customer_self_declared_country', ! empty( $request['extensions']['woocommerce-eu-vat-number']['location_confirmation'] ) ? 'true' : 'false' );
+		}
+
 		if ( ! $vat_number ) {
 			return;
 		}
@@ -84,12 +90,6 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		$order->update_meta_data( '_vat_number_is_validated', ! is_null( $data['validation']['valid'] ) ? 'true' : 'false' );
 		$order->update_meta_data( '_vat_number_is_valid', true === $data['validation']['valid'] ? 'true' : 'false' );
 		$order->update_meta_data( '_billing_vat_number', $vat_number );
-
-		// We set the customer's self-delared country and the country we think they are from based on their IP.
-		if ( false !== WC_EU_VAT_Number::get_ip_country() ) {
-			$order->update_meta_data( '_customer_ip_country', WC_EU_VAT_Number::get_ip_country() );
-			$order->update_meta_data( '_customer_self_declared_country', ! empty( $request['extensions']['woocommerce-eu-vat-number']['location_confirmation'] ) ? 'true' : 'false' );
-		}
 
 		$this->maybe_apply_exemption();
 	}
@@ -259,7 +259,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		}
 
 		$fail_handler    = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
-		$is_format_valid = WC_EU_VAT_Number::validate_vat_format( $vat_number );
+		$is_format_valid = WC_EU_VAT_Number::validate_vat_format( $vat_number, $country );
 
 		if ( is_wp_error( $is_format_valid ) ) {
 			$data['vat_number'] = $vat_number;

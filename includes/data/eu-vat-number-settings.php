@@ -81,6 +81,17 @@ $wc_eu_vat_settings = array(
 		'default' => 'yes',
 	),
 	array(
+		'name'    => __( 'Require that VAT Number includes country code.', 'woocommerce-eu-vat-number' ),
+		'desc'    => __( 'Require customers to enter the country code as part of their of their VAT number (e.g. PL0123456789).</p><p>This is recommended to ensure proper validation and compliance with EU VAT regulations. When unchecked your customers can enter a VAT number without the country code and it will be presumed to be from their billing address country.', 'woocommerce-eu-vat-number' ),
+		'id'      => 'woocommerce_eu_vat_number_require_country_code',
+		'type'    => 'select',
+		'default' => 'yes',
+		'options' => array(
+			'yes' => __( 'Yes, require country prefix', 'woocommerce-eu-vat-number' ),
+			'no'  => __( 'No, allow VAT numbers without country prefix', 'woocommerce-eu-vat-number' ),
+		),
+	),
+	array(
 		'name'            => __( 'Enable B2B Transactions', 'woocommerce-eu-vat-number' ),
 		'desc'            => __( 'This will force users to check out with a VAT number, useful for sites that transact purely from B2B.', 'woocommerce-eu-vat-number' ),
 		'id'              => 'woocommerce_eu_vat_number_b2b',

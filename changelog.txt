@@ -1,5 +1,15 @@
 *** EU VAT Number Changelog ***
 
+2025-12-02 - version 3.0.3
+* Add - Support for VAT Validation on Subscription Renewals.
+* Add - Setting to allow customers to enter VAT numbers without a country prefix.
+* Fix - The plugin asset URL issue for plugins installed via a symlink (e.g. on WordPress.com).
+* Fix - Account for the Greek VAT prefix, EL, for the purposes of matching customer and merchant countries.
+* Fix - Ensure that the 'Collect and Validate Evidence' validation works properly for users whose IP address country is in the EU for Block checkout.
+* Fix - Display VAT in billing address on order confirmation page when shipping address is not displayed.
+* Dev - Update for PHP 8.4 compatibility.
+* Dev - Bump WordPress "tested up to" version 6.9.
+
 2025-10-20 - version 3.0.2
 * Fix - Accessibility: Announce validation errors for the VAT field on the block checkout screen
 * Fix - Accessibility: Announce field description for the VAT field on the block checkout screen.
