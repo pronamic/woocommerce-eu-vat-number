@@ -100,6 +100,8 @@ class WC_EU_VAT_Number {
 		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'set_order_data' ) );
 		add_action( 'woocommerce_checkout_update_customer', array( __CLASS__, 'set_customer_data' ) );
 		add_action( 'woocommerce_create_refund', array( __CLASS__, 'set_refund_data' ) );
+		add_filter( 'woocommerce_customer_get_billing_vat_number', array( __CLASS__, 'filter_customer_meta_vat_number' ) );
+		add_filter( 'woocommerce_customer_get_shipping_vat_number', array( __CLASS__, 'filter_customer_meta_vat_number' ) );
 
 		// Add VAT to addresses.
 		add_filter( 'woocommerce_order_formatted_billing_address', array( __CLASS__, 'formatted_billing_address' ), 10, 2 );
@@ -382,10 +384,11 @@ class WC_EU_VAT_Number {
 	 *
 	 * @param  string $vat_number VAT Number.
 	 * @param  string $country    CountryCode.
+	 * @param  string $postcode   Postcode.
 	 *
 	 * @return bool|WP_Error if valid/not valid, WP_ERROR if validation failed
 	 */
-	public static function vat_number_is_valid( $vat_number, $country ) {
+	public static function vat_number_is_valid( $vat_number, $country, $postcode = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		// The StoreAPI will set $vat_number to null if the user does not enter it. We should show an error in this case.
 		if ( null === $vat_number ) {
 			return false;
@@ -1057,7 +1060,7 @@ class WC_EU_VAT_Number {
 		$regex_patterns = self::get_country_code_patterns();
 
 		if ( ! in_array( $country_code, array_keys( $regex_patterns ), true ) ) {
-			return new WP_Error( 'wc-eu-vat-unsupported-country-error', __( 'The country is not supported.', 'woocommerce-eu-vat-number' ) );
+			return new WP_Error( 'wc-eu-vat-unsupported-country-error', __( 'The country code provided in the VAT Number is not supported.', 'woocommerce-eu-vat-number' ) );
 		}
 
 		$regex_pattern = $regex_patterns[ $country_code ];
@@ -1100,7 +1103,7 @@ class WC_EU_VAT_Number {
 			$postcode    = $shipping_postcode;
 		}
 
-		if ( ! empty( $billing_vat_number ) ) {
+		if ( in_array( $vat_country, self::get_eu_countries(), true ) && ! empty( $billing_vat_number ) ) {
 			$billing_vat_number   = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $billing_vat_number ) );
 			$is_format_valid      = self::validate_vat_format( $billing_vat_number, $vat_country );
 			$vat_number_formatted = self::get_formatted_vat_number( $billing_vat_number );
@@ -1112,9 +1115,7 @@ class WC_EU_VAT_Number {
 				wc_add_notice( $is_format_valid->get_error_message(), 'error' );
 				WC()->session->set( 'vat_number', null );
 			}
-		}
 
-		if ( in_array( $vat_country, self::get_eu_countries(), true ) && ! empty( $billing_vat_number ) ) {
 			self::validate( $billing_vat_number, $vat_country, $postcode );
 
 			if ( true === (bool) self::$data['validation']['valid'] ) {
@@ -1226,6 +1227,40 @@ class WC_EU_VAT_Number {
 			return (string) filemtime( WC_EU_ABSPATH . trim( $file, '/' ) );
 		}
 		return WC_EU_VAT_VERSION;
+	}
+
+	/**
+	 * Handles legcy meta value for VAT number.
+	 *
+	 * The legacy vat number was stored automatically by WooCommerce
+	 * in the user meta under the billing_vat_number and shipping_vat_number keys.
+	 * The values under these keys are used to pre-fill the VAT number field on the
+	 * checkout page for logged in users, which is incorrect as the legacy keys are
+	 * not used anymore.
+	 *
+	 * We instead return the value stored under the vat_number key.
+	 *
+	 * @param string $value The meta value.
+	 * @return string The filtered meta value.
+	 */
+	public static function filter_customer_meta_vat_number( $value ) {
+		if ( ! is_checkout() ) {
+			return $value;
+		}
+
+		$customer_id = get_current_user_id();
+
+		if ( ! $customer_id ) {
+			return $value;
+		}
+
+		$vat_number = get_user_meta( $customer_id, 'vat_number', true );
+
+		if ( $vat_number ) {
+			return $vat_number;
+		}
+
+		return $value;
 	}
 
 	/**

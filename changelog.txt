@@ -1,5 +1,12 @@
 *** EU VAT Number Changelog ***
 
+2025-02-09 - version 3.0.4
+* Fix - Ensure that VAT number validation applies only to EU countries.
+* Fix - VAT number not verified on manually created order.
+* Fix - Inconsistent value between `vat_number`, `billing_vat_number` and `shipping_vat_number` usermeta fields.
+* Dev - Bump WooCommerce "tested up to" version 10.5.
+* Dev - Bump WooCommerce minimum supported version to 10.3.
+
 2025-12-02 - version 3.0.3
 * Add - Support for VAT Validation on Subscription Renewals.
 * Add - Setting to allow customers to enter VAT numbers without a country prefix.

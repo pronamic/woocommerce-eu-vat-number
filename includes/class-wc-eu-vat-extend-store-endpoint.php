@@ -58,6 +58,11 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$postcode = WC()->customer->get_shipping_postcode() ?? '';
 		}
 
+		// Skip if country is not in the EU.
+		if ( ! in_array( $country, WC_EU_VAT_Number::get_eu_countries(), true ) ) {
+			return;
+		}
+
 		if ( ! empty( $request['extensions']['woocommerce-eu-vat-number']['vat_number'] ) ) {
 			$vat_number   = $request['extensions']['woocommerce-eu-vat-number']['vat_number'];
 			$is_valid     = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
@@ -256,6 +261,17 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			if ( $use_shipping_country && $needs_shipping ) {
 				$country = $shipping_country;
 			}
+		}
+
+		// Skip validation if country is not in the EU.
+		if ( ! in_array( $country, WC_EU_VAT_Number::get_eu_countries(), true ) ) {
+			return array(
+				'vat_number' => $vat_number,
+				'validation' => array(
+					'valid' => null,
+					'error' => false,
+				),
+			);
 		}
 
 		$fail_handler    = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );

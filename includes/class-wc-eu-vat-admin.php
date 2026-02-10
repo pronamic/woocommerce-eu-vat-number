@@ -436,16 +436,24 @@ class WC_EU_VAT_Admin {
 		$valid              = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
 		$base_country_match = WC_EU_VAT_Number::is_base_country_match( $billing_country, $shipping_country );
 
+		$order->update_meta_data( '_vat_number_is_validated', 'true' );
+
+		// Set validation result based on validation outcome.
+		if ( is_wp_error( $valid ) ) {
+			$order->update_meta_data( '_vat_number_is_valid', 'false' );
+		} elseif ( true === $valid ) {
+			$order->update_meta_data( '_vat_number_is_valid', 'true' );
+		} else {
+			$order->update_meta_data( '_vat_number_is_valid', 'false' );
+		}
+
 		if ( 'no' === get_option( 'woocommerce_eu_vat_number_deduct_in_base', 'yes' ) && $base_country_match ) {
 			add_filter( 'woocommerce_order_is_vat_exempt', '__return_false' );
 			return;
 		}
 
-		$order->update_meta_data( '_vat_number_is_validated', 'true' );
-
 		try {
 			if ( true === $valid ) {
-				$order->update_meta_data( '_vat_number_is_valid', 'true' );
 				add_filter( 'woocommerce_order_is_vat_exempt', '__return_true' );
 				return;
 			}
