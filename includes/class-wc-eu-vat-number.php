@@ -211,6 +211,7 @@ class WC_EU_VAT_Number {
 			'validation' => array(
 				'valid' => null,
 				'error' => false,
+				'code'  => false,
 			),
 		);
 	}
@@ -330,6 +331,36 @@ class WC_EU_VAT_Number {
 	}
 
 	/**
+	 * Normalize a VAT number by cleaning it and ensuring the correct country prefix.
+	 *
+	 * Strips unwanted characters, uppercases, and fixes the prefix for countries
+	 * where the VAT prefix differs from the country code (e.g., Greece uses 'EL'
+	 * as VAT prefix but 'GR' as country code).
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $vat_number The raw VAT number.
+	 * @param string $country    The country code.
+	 * @return string The normalized VAT number with the correct prefix.
+	 */
+	public static function get_normalized_vat_number( $vat_number, $country ) {
+		$vat_number           = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
+		$vat_number_formatted = self::get_formatted_vat_number( $vat_number );
+		$vat_prefix           = self::get_vat_number_prefix( $country );
+
+		// If the VAT number starts with the country code (e.g., GR) instead of the VAT prefix (e.g., EL),
+		// replace it with the correct VAT prefix. This handles cases like Greece where GR != EL.
+		if ( $vat_prefix !== $country && str_starts_with( $vat_number, $country ) ) {
+			$vat_number = $vat_prefix . $vat_number_formatted;
+		} elseif ( ! str_starts_with( $vat_number, $vat_prefix ) && $vat_number_formatted === $vat_number ) {
+			// No recognized prefix was provided, add the correct VAT prefix.
+			$vat_number = $vat_prefix . $vat_number;
+		}
+
+		return $vat_number;
+	}
+
+	/**
 	 * Extract the 2-letter country code from a VAT number.
 	 *
 	 * @param string $vat_number The VAT number to extract the country code from.
@@ -415,7 +446,7 @@ class WC_EU_VAT_Number {
 		}
 
 		if ( empty( $vat_number_formatted ) ) {
-			return new WP_Error( 'wc-eu-vat-api-error', __( 'The VAT number is incomplete.', 'woocommerce-eu-vat-number' ) );
+			return new WP_Error( 'wc-eu-vat-validation-error', __( 'The VAT number is incomplete.', 'woocommerce-eu-vat-number' ) );
 		}
 
 		$country_codes_patterns = self::get_country_code_patterns();
@@ -423,7 +454,7 @@ class WC_EU_VAT_Number {
 		// Return error if VAT Country Code doesn't match or exist.
 		if ( ! isset( $country_codes_patterns[ $vat_prefix ] ) || ( $vat_prefix . $vat_number_formatted !== $vat_number ) ) {
 			// translators: %1$s - VAT number field label, %2$s - VAT Number from user, %3$s - Billing country.
-			return new WP_Error( 'wc-eu-vat-api-error', sprintf( __( 'You have entered an invalid country code for %1$s (%2$s) for your country (%3$s).', 'woocommerce-eu-vat-number' ), get_option( 'woocommerce_eu_vat_number_field_label', 'VAT number' ), $vat_number, $country ) );
+			return new WP_Error( 'wc-eu-vat-validation-error', sprintf( __( 'You have entered an invalid country code for %1$s (%2$s) for your country (%3$s).', 'woocommerce-eu-vat-number' ), get_option( 'woocommerce_eu_vat_number_field_label', 'VAT number' ), $vat_number, $country ) );
 		}
 
 		if ( ! empty( $cached_result ) ) {
@@ -453,8 +484,33 @@ class WC_EU_VAT_Number {
 				try {
 					$vies_req = $vies->check_vat( $vat_prefix, $vat_number_formatted );
 					$is_valid = $vies_req->is_valid();
-
 				} catch ( SoapFault $e ) {
+					$fault_string = $e->getMessage();
+
+					// Check for specific VIES error codes that indicate member state unavailability.
+					if ( stripos( $fault_string, 'MS_UNAVAILABLE' ) !== false ) {
+						return new WP_Error(
+							'wc-eu-vat-api-error',
+							__( 'The VAT validation service for this country is temporarily unavailable. Please try again later.', 'woocommerce-eu-vat-number' )
+						);
+					}
+
+					if ( stripos( $fault_string, 'SERVICE_UNAVAILABLE' ) !== false || stripos( $fault_string, 'MS_MAX_CONCURRENT_REQ' ) !== false ) {
+						return new WP_Error(
+							'wc-eu-vat-api-error',
+							__( 'The VAT validation service is temporarily unavailable due to high load. Please try again later.', 'woocommerce-eu-vat-number' )
+						);
+					}
+
+					if ( stripos( $fault_string, 'TIMEOUT' ) !== false ) {
+						return new WP_Error(
+							'wc-eu-vat-api-error',
+							__( 'The VAT validation service timed out. Please try again later.', 'woocommerce-eu-vat-number' )
+						);
+					}
+
+					return new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
+				} catch ( Exception $e ) {
 					return new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
 				}
 			}
@@ -541,12 +597,14 @@ class WC_EU_VAT_Number {
 			self::$data['validation'] = array(
 				'valid' => false,
 				'error' => $valid->get_error_message(),
+				'code'  => $valid->get_error_code(),
 			);
 		} else {
 			self::$data['vat_number'] = $valid ? self::get_vat_number_prefix( $country ) . $vat_number_formatted : $vat_number;
 			self::$data['validation'] = array(
 				'valid' => $valid,
 				'error' => false,
+				'code'  => false,
 			);
 		}
 	}
@@ -1018,6 +1076,13 @@ class WC_EU_VAT_Number {
 			$order->update_meta_data( '_customer_ip_country', self::get_ip_country() );
 			$order->update_meta_data( '_customer_self_declared_country', ! empty( $_POST['location_confirmation'] ) ? 'true' : 'false' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		}
+
+		// Add detailed order note about VAT validation result.
+		wc_eu_vat_maybe_add_order_note(
+			$order,
+			self::$data['vat_number'],
+			self::$data['validation']['valid'] ?? null
+		);
 	}
 
 	/**
@@ -1054,6 +1119,11 @@ class WC_EU_VAT_Number {
 		if ( empty( $country_code ) && ( ! self::is_country_prefix_required() ) ) {
 			$country_code = self::get_vat_number_prefix( $address_country_code );
 			$vat_number   = $country_code . $vat_number;
+		}
+
+		// If country prefix is required but not provided, show a specific error.
+		if ( empty( $country_code ) && self::is_country_prefix_required() ) {
+			return new WP_Error( 'wc-eu-vat-country-code-required', __( 'A valid two character country code is required at the start of the VAT number.', 'woocommerce-eu-vat-number' ) );
 		}
 
 		$vat_number     = self::get_formatted_vat_number( $vat_number );
@@ -1104,12 +1174,8 @@ class WC_EU_VAT_Number {
 		}
 
 		if ( in_array( $vat_country, self::get_eu_countries(), true ) && ! empty( $billing_vat_number ) ) {
-			$billing_vat_number   = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $billing_vat_number ) );
-			$is_format_valid      = self::validate_vat_format( $billing_vat_number, $vat_country );
-			$vat_number_formatted = self::get_formatted_vat_number( $billing_vat_number );
-			if ( ! str_starts_with( $billing_vat_number, $vat_country ) && $vat_number_formatted === $billing_vat_number ) {
-				$billing_vat_number = $vat_country . $billing_vat_number;
-			}
+			$billing_vat_number = self::get_normalized_vat_number( $billing_vat_number, $vat_country );
+			$is_format_valid    = self::validate_vat_format( $billing_vat_number, $vat_country );
 
 			if ( is_wp_error( $is_format_valid ) ) {
 				wc_add_notice( $is_format_valid->get_error_message(), 'error' );
@@ -1119,21 +1185,26 @@ class WC_EU_VAT_Number {
 			self::validate( $billing_vat_number, $vat_country, $postcode );
 
 			if ( true === (bool) self::$data['validation']['valid'] ) {
+				// VAT number validated successfully.
 				self::maybe_apply_vat_exemption( $billing_vat_number, true );
 				WC()->session->set( 'vat_number', $billing_vat_number );
-			} elseif ( ! empty( self::$data['validation']['error'] ) ) {
-				wc_add_notice( self::$data['validation']['error'], 'error' );
-				WC()->session->set( 'vat_number', null );
 			} else {
+				// Validation failed (either API error or invalid number).
+				// Handle according to fail_handler setting.
 				switch ( $fail_handler ) {
 					case 'accept_with_vat':
+						// Accept the order but keep VAT charged.
 						self::maybe_apply_vat_exemption( $billing_vat_number, false );
 						break;
 					case 'accept':
+						// Accept the order and remove VAT.
 						self::maybe_apply_vat_exemption( $billing_vat_number, true );
 						break;
 					default:
-						if ( false === self::$data['validation']['valid'] ) {
+						// 'reject' - show error and block the order.
+						if ( ! empty( self::$data['validation']['error'] ) ) {
+							wc_add_notice( self::$data['validation']['error'], 'error' );
+						} elseif ( false === self::$data['validation']['valid'] ) {
 							wc_add_notice(
 								sprintf(
 									/* translators: 1: VAT number field label, 2: VAT Number, 3: Address type, 4: Country */
@@ -1145,10 +1216,8 @@ class WC_EU_VAT_Number {
 								),
 								'error'
 							);
-						} else {
-							wc_add_notice( self::$data['validation']['error'], 'error' );
-							WC()->session->set( 'vat_number', null );
 						}
+						WC()->session->set( 'vat_number', null );
 						break;
 				}
 			}

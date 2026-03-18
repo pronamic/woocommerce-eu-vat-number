@@ -396,6 +396,11 @@ class WC_EU_VAT_Admin {
 			return;
 		}
 
+		// This should only run when triggered by the admin ajax call for woocommerce_calc_line_taxes.
+		if ( did_action( 'wp_ajax_woocommerce_calc_line_taxes' ) === 0 ) {
+			return;
+		}
+
 		/*
 		 * First try and get the billing country from the
 		 * address form (adding new order). If it is not

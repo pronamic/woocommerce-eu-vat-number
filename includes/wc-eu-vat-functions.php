@@ -88,3 +88,32 @@ function wc_eu_vat_maybe_add_zero_tax_display( $total_rows, $order, $tax_display
 function wc_eu_vat_use_shipping_country() {
 	return 'yes' === get_option( 'woocommerce_eu_vat_number_use_shipping_country', 'yes' );
 }
+
+/**
+ * Add an order note with details about VAT validation result.
+ *
+ * @since 3.1.0
+ *
+ * @param WC_Order $order       WC Order.
+ * @param string   $vat_number  VAT number.
+ * @param bool     $is_valid    Whether VAT number is valid.
+ * @return void
+ */
+function wc_eu_vat_maybe_add_order_note( $order, $vat_number, $is_valid ) {
+	// No VAT number provided, no note needed.
+	if ( empty( $vat_number ) ) {
+		return;
+	}
+
+	// VAT number was validated successfully.
+	if ( true === $is_valid ) {
+		$order->add_order_note(
+			sprintf(
+				/* translators: %s: VAT number */
+				__( 'VAT number %s was validated successfully.', 'woocommerce-eu-vat-number' ),
+				$vat_number
+			)
+		);
+		return;
+	}
+}

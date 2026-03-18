@@ -138,9 +138,10 @@ class WC_EU_VAT_Report_EC_Sales_List extends WC_Admin_Report {
 						'name'     => '_billing_country',
 					),
 					'_shipping_country'   => array(
-						'type'     => 'meta',
-						'function' => '',
-						'name'     => '_shipping_country',
+						'type'      => 'meta',
+						'function'  => '',
+						'name'      => '_shipping_country',
+						'join_type' => 'LEFT',
 					),
 					'_order_currency'     => array(
 						'type'     => 'meta',
@@ -181,9 +182,10 @@ class WC_EU_VAT_Report_EC_Sales_List extends WC_Admin_Report {
 						'name'     => '_billing_country',
 					),
 					'_shipping_country' => array(
-						'type'     => 'meta',
-						'function' => '',
-						'name'     => '_shipping_country',
+						'type'      => 'meta',
+						'function'  => '',
+						'name'      => '_shipping_country',
+						'join_type' => 'LEFT',
 					),
 					'_order_currency'   => array(
 						'type'     => 'meta',

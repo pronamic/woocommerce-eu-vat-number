@@ -110,6 +110,15 @@ class WC_EU_VAT_Reports {
 	 * @return array
 	 */
 	public static function init_reports( $reports ) {
+		// Only check sync status when actually viewing reports page.
+		// This prevents the expensive query from running on every admin page.
+		// Check if get_current_screen() is available (may not be in AJAX/REST/CLI contexts).
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || 'woocommerce_page_wc-reports' !== $screen->id ) {
+			// Skip the expensive check on non-reports pages.
+			return $reports;
+		}
+
 		// The EU VAT reports are incompatible with stores running HPOS with syncing disabled.
 		if ( self::is_cot_enabled() && ! self::is_cot_sync_enabled() ) {
 			return $reports;

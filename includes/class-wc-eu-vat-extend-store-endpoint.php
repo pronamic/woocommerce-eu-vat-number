@@ -64,7 +64,11 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		}
 
 		if ( ! empty( $request['extensions']['woocommerce-eu-vat-number']['vat_number'] ) ) {
-			$vat_number   = $request['extensions']['woocommerce-eu-vat-number']['vat_number'];
+			$vat_number = $request['extensions']['woocommerce-eu-vat-number']['vat_number'];
+
+			// Normalize the VAT number prefix before validation (handles cases like Greece where GR != EL).
+			$vat_number = WC_EU_VAT_Number::get_normalized_vat_number( $vat_number, $country );
+
 			$is_valid     = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
 			$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
 
@@ -75,7 +79,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 
 		$customer_id = $order->get_customer_id();
 
-		if ( $customer_id ) {
+		if ( $customer_id && ! empty( $vat_number ) ) {
 			$customer = new \WC_Customer( $customer_id );
 			$customer->update_meta_data( 'vat_number', $vat_number );
 			$customer->save_meta_data();
@@ -95,6 +99,11 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		$order->update_meta_data( '_vat_number_is_validated', ! is_null( $data['validation']['valid'] ) ? 'true' : 'false' );
 		$order->update_meta_data( '_vat_number_is_valid', true === $data['validation']['valid'] ? 'true' : 'false' );
 		$order->update_meta_data( '_billing_vat_number', $vat_number );
+
+		// Add detailed order note about VAT validation result.
+		$vat_number = $data['vat_number'] ?? '';
+		$is_valid   = $data['validation']['valid'] ?? null;
+		wc_eu_vat_maybe_add_order_note( $order, $vat_number, $is_valid );
 
 		$this->maybe_apply_exemption();
 	}
@@ -274,7 +283,11 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			);
 		}
 
-		$fail_handler    = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
+		$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
+
+		// Normalize the VAT number prefix before validation (handles cases like Greece where GR != EL).
+		$vat_number = WC_EU_VAT_Number::get_normalized_vat_number( $vat_number, $country );
+
 		$is_format_valid = WC_EU_VAT_Number::validate_vat_format( $vat_number, $country );
 
 		if ( is_wp_error( $is_format_valid ) ) {
@@ -290,12 +303,16 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 
 		$is_registered_valid = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country );
 
+		// Handle WP_Error (API communication errors) according to fail_handler setting.
 		if ( is_wp_error( $is_registered_valid ) ) {
+			$error_code    = $is_registered_valid->get_error_code();
+			$error_message = $is_registered_valid->get_error_message();
+
 			$data['vat_number'] = $vat_number;
 			$data['validation'] = array(
 				'valid' => false,
-				'error' => $is_registered_valid->get_error_message(),
-				'code'  => $is_registered_valid->get_error_code(),
+				'code'  => $error_code,
+				'error' => 'reject' === $fail_handler ? $error_message : false,
 			);
 
 			return $data;
@@ -345,11 +362,11 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		if ( false === (bool) $validation['validation']['valid'] && $with_notices ) {
 			switch ( $fail_handler ) {
 				case 'accept_with_vat':
-					wc_add_notice( $validation['validation']['error'], 'error' );
-					break;
 				case 'accept':
+					// Don't add an error notice - order should be accepted.
 					break;
 				default:
+					// 'reject' - show error and block checkout.
 					wc_add_notice( $validation['validation']['error'], 'error' );
 					break;
 			}
@@ -372,16 +389,17 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		} else {
 			switch ( $fail_handler ) {
 				case 'accept_with_vat':
+					// Accept the order but keep VAT charged.
 					WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, false );
 					break;
 				case 'accept':
-					$error_code = $validation['validation']['code'] ?? false;
-
-					if ( 'wc-eu-vat-api-error' !== $error_code ) {
-						WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, true );
-					}
+					// Accept the order and remove VAT.
+					// This applies whether validation failed due to invalid number OR API error.
+					// The merchant has explicitly chosen to trust customers when validation fails.
+					WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, true );
 					break;
 				default:
+					// 'reject' - don't exempt VAT (order will be blocked anyway).
 					WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, false );
 					break;
 			}
