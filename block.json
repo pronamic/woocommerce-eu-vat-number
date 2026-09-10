@@ -1,5 +1,5 @@
 {
-	"apiVersion": 2,
+	"apiVersion": 3,
 	"name": "woocommerce/eu-vat-number",
 	"version": "1.0.0",
 	"title": "EU VAT Number",

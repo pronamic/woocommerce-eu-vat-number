@@ -92,6 +92,13 @@ $wc_eu_vat_settings = array(
 		),
 	),
 	array(
+		'name'    => __( 'Require company name when a VAT number is entered', 'woocommerce-eu-vat-number' ),
+		'desc'    => __( 'When enabled, customers who enter a VAT number on checkout must also enter a company name (billing or shipping, matching where the VAT number applies). Ensure the company field is visible in your checkout if you use this option.', 'woocommerce-eu-vat-number' ),
+		'id'      => 'woocommerce_eu_vat_number_require_company_with_vat',
+		'type'    => 'checkbox',
+		'default' => 'no',
+	),
+	array(
 		'name'            => __( 'Enable B2B Transactions', 'woocommerce-eu-vat-number' ),
 		'desc'            => __( 'This will force users to check out with a VAT number, useful for sites that transact purely from B2B.', 'woocommerce-eu-vat-number' ),
 		'id'              => 'woocommerce_eu_vat_number_b2b',

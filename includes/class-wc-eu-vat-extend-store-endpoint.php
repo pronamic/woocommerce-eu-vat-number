@@ -8,6 +8,10 @@
  * @since 2.8.9
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use Automattic\WooCommerce\StoreApi\Schemas\V1\CheckoutSchema;
 use Automattic\WooCommerce\StoreApi\Schemas\V1\CartSchema;
 use Automattic\WooCommerce\StoreApi\StoreApi;
@@ -50,12 +54,24 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		}
 
 		$billing_address = $request->get_param( 'billing_address' );
-		$country         = wc_clean( $billing_address['country'] );
-		$postcode        = wc_clean( $billing_address['postcode'] );
+		if ( ! is_array( $billing_address ) ) {
+			$billing_address = array();
+		}
 
-		if ( WC()->customer->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
-			$country  = WC()->customer->get_shipping_country() ?? $country;
-			$postcode = WC()->customer->get_shipping_postcode() ?? '';
+		$country  = isset( $billing_address['country'] ) ? wc_clean( $billing_address['country'] ) : '';
+		$postcode = isset( $billing_address['postcode'] ) ? wc_clean( $billing_address['postcode'] ) : '';
+
+		if ( '' === $country ) {
+			$country = wc_clean( $order->get_billing_country() );
+		}
+		if ( '' === $postcode ) {
+			$postcode = wc_clean( $order->get_billing_postcode() );
+		}
+
+		$customer_obj = WC()->customer;
+		if ( $customer_obj && $customer_obj->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
+			$country  = $customer_obj->get_shipping_country() ? wc_clean( $customer_obj->get_shipping_country() ) : $country;
+			$postcode = $customer_obj->get_shipping_postcode() ? wc_clean( $customer_obj->get_shipping_postcode() ) : '';
 		}
 
 		// Skip if country is not in the EU.
@@ -63,8 +79,18 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			return;
 		}
 
-		if ( ! empty( $request['extensions']['woocommerce-eu-vat-number']['vat_number'] ) ) {
-			$vat_number = $request['extensions']['woocommerce-eu-vat-number']['vat_number'];
+		$extensions = $request->get_param( 'extensions' );
+		if ( ! is_array( $extensions ) ) {
+			$extensions = array();
+		}
+		$eu_vat_ext = isset( $extensions['woocommerce-eu-vat-number'] ) && is_array( $extensions['woocommerce-eu-vat-number'] )
+			? $extensions['woocommerce-eu-vat-number']
+			: array();
+
+		$vat_number = '';
+
+		if ( ! empty( $eu_vat_ext['vat_number'] ) ) {
+			$vat_number = $eu_vat_ext['vat_number'];
 
 			// Normalize the VAT number prefix before validation (handles cases like Greece where GR != EL).
 			$vat_number = WC_EU_VAT_Number::get_normalized_vat_number( $vat_number, $country );
@@ -73,9 +99,15 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
 
 			if ( 'reject' === $fail_handler && ( is_wp_error( $is_valid ) || false === $is_valid ) ) {
-				wc_add_notice( __( 'Invalid VAT number.', 'woocommerce-eu-vat-number' ), 'error' );
+				wc_eu_vat_clear_tagged_error_notices_from_session();
+				wc_add_notice( __( 'Invalid VAT number.', 'woocommerce-eu-vat-number' ), 'error', wc_eu_vat_notice_data() );
 			}
+		} elseif ( WC()->session ) {
+			// Partial Store API requests (e.g. only payment_method) omit extensions; fall back like get_cart_data().
+			$vat_number = WC()->session->get( 'vat_number' );
 		}
+
+		$vat_number = is_string( $vat_number ) ? wc_clean( $vat_number ) : '';
 
 		$customer_id = $order->get_customer_id();
 
@@ -88,7 +120,8 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		// We set the customer's self-declared country and the country we think they are from based on their IP.
 		if ( false !== WC_EU_VAT_Number::get_ip_country() ) {
 			$order->update_meta_data( '_customer_ip_country', WC_EU_VAT_Number::get_ip_country() );
-			$order->update_meta_data( '_customer_self_declared_country', ! empty( $request['extensions']['woocommerce-eu-vat-number']['location_confirmation'] ) ? 'true' : 'false' );
+			$location_confirmation = ! empty( $eu_vat_ext['location_confirmation'] );
+			$order->update_meta_data( '_customer_self_declared_country', $location_confirmation ? 'true' : 'false' );
 		}
 
 		if ( ! $vat_number ) {
@@ -178,12 +211,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 	 * @return array
 	 */
 	public function get_cart_data() {
-		$vat_number  = WC()->session->get( 'vat_number' );
-		$customer_id = get_current_user_id();
-
-		if ( $customer_id && empty( $vat_number ) ) {
-			$vat_number = get_user_meta( $customer_id, 'vat_number', true );
-		}
+		$vat_number = WC_EU_VAT_Number::get_checkout_vat_number_prefill();
 
 		$validation_result = $this->validate( $vat_number );
 		$vat_number        = $validation_result['vat_number'] ?? $vat_number;
@@ -219,12 +247,24 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		 */
 		if ( empty( $vat_number ) ) {
 			WC()->session->set( 'vat_number', null );
+			WC()->session->set( 'wc_eu_vat_used_shipping_country', null );
 			WC()->customer->set_is_vat_exempt( false );
 
 			return;
 		}
 
-		WC()->session->set( 'wc_eu_vat_current_country', $data['needs_shipping'] && $data['use_shipping_country'] ? $data['shipping_country'] : $data['billing_country'] );
+		$use_shipping_country = array_key_exists( 'use_shipping_country', $data ) ? (bool) $data['use_shipping_country'] : wc_eu_vat_use_shipping_country();
+		$needs_shipping       = array_key_exists( 'needs_shipping', $data ) ? (bool) $data['needs_shipping'] : ( WC()->cart ? WC()->cart->needs_shipping_address() : false );
+		$billing_country      = isset( $data['billing_country'] ) ? $data['billing_country'] : WC()->customer->get_billing_country();
+		$shipping_country     = isset( $data['shipping_country'] ) ? $data['shipping_country'] : WC()->customer->get_shipping_country();
+		$use_shipping_context = $needs_shipping && $use_shipping_country;
+
+		if ( empty( $shipping_country ) ) {
+			$shipping_country = $billing_country;
+		}
+
+		WC()->session->set( 'wc_eu_vat_current_country', $use_shipping_context ? $shipping_country : $billing_country );
+		WC()->session->set( 'wc_eu_vat_used_shipping_country', $use_shipping_context );
 
 		$validation_result = $this->validate( $vat_number );
 		$vat_number        = $validation_result['vat_number'] ?? $vat_number;
@@ -257,7 +297,8 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			);
 		}
 
-		$country = WC()->session->get( 'wc_eu_vat_current_country' );
+		$country               = WC()->session->get( 'wc_eu_vat_current_country' );
+		$used_shipping_country = false;
 
 		if ( ! $country ) {
 			$billing_country  = WC()->customer->get_billing_country();
@@ -268,7 +309,18 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$needs_shipping       = WC()->cart ? WC()->cart->needs_shipping_address() : false;
 
 			if ( $use_shipping_country && $needs_shipping ) {
-				$country = $shipping_country;
+				$country               = $shipping_country;
+				$used_shipping_country = true;
+			}
+		} else {
+			$session_used_shipping_country = WC()->session->get( 'wc_eu_vat_used_shipping_country', null );
+
+			if ( ! is_null( $session_used_shipping_country ) ) {
+				$used_shipping_country = (bool) $session_used_shipping_country;
+			} else {
+				// Backward compatibility for sessions created before wc_eu_vat_used_shipping_country existed.
+				$shipping_country      = WC()->customer->get_shipping_country();
+				$used_shipping_country = wc_eu_vat_use_shipping_country() && $shipping_country && $country === $shipping_country;
 			}
 		}
 
@@ -326,8 +378,6 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			'error' => false,
 		);
 
-		$use_shipping_country = wc_eu_vat_use_shipping_country();
-
 		if ( ! $is_registered_valid ) {
 			if ( 'reject' === $fail_handler ) {
 				$data['validation']['error'] = sprintf(
@@ -335,7 +385,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 					__( 'You have entered an invalid %1$s (%2$s) for your %3$s country (%4$s).', 'woocommerce-eu-vat-number' ),
 					get_option( 'woocommerce_eu_vat_number_field_label', __( 'VAT number', 'woocommerce-eu-vat-number' ) ),
 					$vat_number,
-					$use_shipping_country ? __( 'shipping', 'woocommerce-eu-vat-number' ) : __( 'billing', 'woocommerce-eu-vat-number' ),
+					$used_shipping_country ? __( 'shipping', 'woocommerce-eu-vat-number' ) : __( 'billing', 'woocommerce-eu-vat-number' ),
 					$country
 				);
 			} else {
@@ -350,7 +400,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 	 * Validates VAT Number and tries to apply the exemption given the information.
 	 *
 	 * @param boolean $with_notices Indicates whether to add notices or just run without any feedback.
-	 * This is used while chaning the field on the checkout for and when submitting the order, hence
+	 * This is used while changing the field on the checkout for and when submitting the order, hence
 	 * the two separate use cases.
 	 *
 	 * @return void
@@ -366,12 +416,12 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 					// Don't add an error notice - order should be accepted.
 					break;
 				default:
-					// 'reject' - show error and block checkout.
-					wc_add_notice( $validation['validation']['error'], 'error' );
+					// 'reject' - clear stale tagged errors, then show current error (avoids 409 carrying old messages).
+					wc_eu_vat_clear_tagged_error_notices_from_session();
+					wc_add_notice( $validation['validation']['error'], 'error', wc_eu_vat_notice_data() );
 					break;
 			}
 		}
-
 		$this->maybe_set_vat_exemption( $validation );
 	}
 
@@ -385,21 +435,25 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		$vat_number   = $validation['vat_number'] ?? '';
 
 		if ( true === (bool) $validation['validation']['valid'] ) {
+			wc_eu_vat_clear_tagged_error_notices_from_session();
 			WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, true );
 		} else {
 			switch ( $fail_handler ) {
 				case 'accept_with_vat':
-					// Accept the order but keep VAT charged.
+					// Accept the order but keep VAT charged; clear stale VAT API/validation errors so Store API does not 409.
+					wc_eu_vat_clear_tagged_error_notices_from_session();
 					WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, false );
 					break;
 				case 'accept':
 					// Accept the order and remove VAT.
 					// This applies whether validation failed due to invalid number OR API error.
 					// The merchant has explicitly chosen to trust customers when validation fails.
+					wc_eu_vat_clear_tagged_error_notices_from_session();
 					WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, true );
 					break;
 				default:
 					// 'reject' - don't exempt VAT (order will be blocked anyway).
+					// Stale notices are cleared in maybe_apply_exemption() before the current reject notice is added.
 					WC_EU_VAT_Number::maybe_apply_vat_exemption( $vat_number, false );
 					break;
 			}

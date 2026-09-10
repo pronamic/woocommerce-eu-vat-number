@@ -93,15 +93,18 @@ class WC_EU_VAT_Number {
 			add_filter( 'woocommerce_shipping_fields', array( __CLASS__, 'shipping_vat_number_field' ) );
 		}
 		add_action( 'woocommerce_checkout_process', array( __CLASS__, 'process_checkout' ) );
+		add_action( 'woocommerce_checkout_validate_order_before_payment', array( __CLASS__, 'validate_order_company_with_vat' ), 10, 2 );
 		add_action( 'woocommerce_checkout_update_order_review', array( __CLASS__, 'ajax_update_checkout_totals' ) );
 		add_action( 'woocommerce_review_order_before_submit', array( __CLASS__, 'location_confirmation' ) );
 		add_action( 'woocommerce_deposits_after_scheduled_order_props_set', array( __CLASS__, 'set_vat_details_for_scheduled_orders' ), 10, 2 );
 
-		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'set_order_data' ) );
+		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'set_order_data' ), 999 );
 		add_action( 'woocommerce_checkout_update_customer', array( __CLASS__, 'set_customer_data' ) );
 		add_action( 'woocommerce_create_refund', array( __CLASS__, 'set_refund_data' ) );
 		add_filter( 'woocommerce_customer_get_billing_vat_number', array( __CLASS__, 'filter_customer_meta_vat_number' ) );
 		add_filter( 'woocommerce_customer_get_shipping_vat_number', array( __CLASS__, 'filter_customer_meta_vat_number' ) );
+		add_filter( 'default_checkout_billing_vat_number', array( __CLASS__, 'default_checkout_vat_number' ), 20, 2 );
+		add_filter( 'default_checkout_shipping_vat_number', array( __CLASS__, 'default_checkout_vat_number' ), 20, 2 );
 
 		// Add VAT to addresses.
 		add_filter( 'woocommerce_order_formatted_billing_address', array( __CLASS__, 'formatted_billing_address' ), 10, 2 );
@@ -121,6 +124,16 @@ class WC_EU_VAT_Number {
 
 		// Add support for subscriptions.
 		add_filter( 'wcs_renewal_order_created', array( __CLASS__, 'vat_on_creating_renewal_order' ), 999, 2 );
+
+		// Seed session VAT when Subscriptions builds a renewal cart so checkout autofill matches the subscription,
+		// while {@see get_checkout_vat_number_prefill()} keeps session as the highest priority for customer edits.
+		add_action( 'wcs_after_early_renewal_setup_cart_subscription', array( __CLASS__, 'seed_session_vat_after_renewal_cart_setup' ), 10, 1 );
+		add_action( 'wcs_after_renewal_setup_cart_subscription', array( __CLASS__, 'seed_session_vat_after_renewal_cart_setup' ), 10, 2 );
+
+		// On manual renewal checkout, mirror the renewal order's VAT number(s) onto the subscription
+		// so future renewals use the latest VAT. Parent / initial order is intentionally left untouched.
+		add_action( 'woocommerce_checkout_order_processed', array( __CLASS__, 'maybe_sync_vat_to_subscription_on_renewal' ), 20, 1 );
+		add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'maybe_sync_vat_to_subscription_on_renewal' ), 20, 1 );
 	}
 
 	/**
@@ -166,25 +179,24 @@ class WC_EU_VAT_Number {
 	 * @param string $script_handle Script handle.
 	 */
 	public static function localize_wc_eu_vat_params( $script_handle ) {
-		$vat_number  = WC() && WC()->session ? WC()->session->get( 'vat_number' ) : '';
-		$customer_id = get_current_user_id();
-
-		if ( $customer_id && empty( $vat_number ) ) {
-			$vat_number = get_user_meta( $customer_id, 'vat_number', true );
-		}
+		$vat_number = self::get_checkout_vat_number_prefill();
 
 		wp_localize_script(
 			$script_handle,
 			'wc_eu_vat_params',
 			array(
-				'eu_countries'         => self::get_eu_countries(),
-				'b2b_required'         => get_option( 'woocommerce_eu_vat_number_b2b', 'false' ),
-				'input_label'          => WC_EU_VAT_Admin::get_vat_number_field_label(),
-				'input_description'    => get_option( 'woocommerce_eu_vat_number_field_description', '' ),
-				'failure_handler'      => get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' ),
-				'use_shipping_country' => wc_eu_vat_use_shipping_country(),
-				'country_codes'        => self::get_country_code_patterns(),
-				'saved_vat_number'     => $vat_number,
+				'eu_countries'             => self::get_eu_countries(),
+				'b2b_required'             => get_option( 'woocommerce_eu_vat_number_b2b', 'false' ),
+				'input_label'              => WC_EU_VAT_Admin::get_vat_number_field_label(),
+				'input_description'        => get_option( 'woocommerce_eu_vat_number_field_description', '' ),
+				'failure_handler'          => get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' ),
+				'use_shipping_country'     => wc_eu_vat_use_shipping_country(),
+				'country_codes'            => self::get_country_code_patterns(),
+				'saved_vat_number'         => $vat_number,
+				'require_company_with_vat' => wc_eu_vat_require_company_with_vat() ? 'yes' : 'no',
+				'checkout_company_field'   => wc_eu_vat_get_checkout_company_field_visibility_option(),
+				'company_label'            => __( 'Company', 'woocommerce-eu-vat-number' ),
+				'company_optional_label'   => __( 'Company (optional)', 'woocommerce-eu-vat-number' ),
 			)
 		);
 	}
@@ -225,12 +237,7 @@ class WC_EU_VAT_Number {
 	 * @return array
 	 */
 	public static function shipping_vat_number_field( $fields ) {
-		$user_id    = get_current_user_id();
-		$vat_number = WC() && WC()->session ? WC()->session->get( 'vat_number' ) : '';
-
-		if ( empty( $vat_number ) && $user_id > 0 ) {
-			$vat_number = get_user_meta( $user_id, 'vat_number', true );
-		}
+		$vat_number = self::get_checkout_vat_number_prefill();
 
 		// If on edit address page, unset vat number field.
 		if ( is_wc_endpoint_url( 'edit-address' ) ) {
@@ -264,12 +271,7 @@ class WC_EU_VAT_Number {
 	 * @return array
 	 */
 	public static function vat_number_field( $fields ) {
-		$user_id    = get_current_user_id();
-		$vat_number = WC() && WC()->session ? WC()->session->get( 'vat_number' ) : '';
-
-		if ( empty( $vat_number ) && $user_id > 0 ) {
-			$vat_number = get_user_meta( $user_id, 'vat_number', true );
-		}
+		$vat_number = self::get_checkout_vat_number_prefill();
 
 		// If on edit address page, unset vat number field.
 		if ( is_wc_endpoint_url( 'edit-address' ) ) {
@@ -333,15 +335,19 @@ class WC_EU_VAT_Number {
 	/**
 	 * Normalize a VAT number by cleaning it and ensuring the correct country prefix.
 	 *
-	 * Strips unwanted characters, uppercases, and fixes the prefix for countries
-	 * where the VAT prefix differs from the country code (e.g., Greece uses 'EL'
-	 * as VAT prefix but 'GR' as country code).
+	 * Strips unwanted characters and uppercases the value. The country prefix is
+	 * only corrected when the VAT number already includes one, or when the store
+	 * allows customers to enter VAT numbers without a country prefix. In the
+	 * former case, the prefix is fixed for countries where the VAT prefix differs
+	 * from the country code (e.g., Greece uses 'EL' as VAT prefix but 'GR'
+	 * as country code). In the latter case, the prefix is prepended when none was
+	 * provided.
 	 *
 	 * @since 3.1.0
 	 *
 	 * @param string $vat_number The raw VAT number.
 	 * @param string $country    The country code.
-	 * @return string The normalized VAT number with the correct prefix.
+	 * @return string The normalized VAT number, with the correct prefix when applicable.
 	 */
 	public static function get_normalized_vat_number( $vat_number, $country ) {
 		$vat_number           = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
@@ -352,8 +358,8 @@ class WC_EU_VAT_Number {
 		// replace it with the correct VAT prefix. This handles cases like Greece where GR != EL.
 		if ( $vat_prefix !== $country && str_starts_with( $vat_number, $country ) ) {
 			$vat_number = $vat_prefix . $vat_number_formatted;
-		} elseif ( ! str_starts_with( $vat_number, $vat_prefix ) && $vat_number_formatted === $vat_number ) {
-			// No recognized prefix was provided, add the correct VAT prefix.
+		} elseif ( ! str_starts_with( $vat_number, $vat_prefix ) && $vat_number_formatted === $vat_number && ! self::is_country_prefix_required() ) {
+			// No recognized prefix was provided; add one only when the merchant allows prefix-less entry.
 			$vat_number = $vat_prefix . $vat_number;
 		}
 
@@ -698,15 +704,15 @@ class WC_EU_VAT_Number {
 		$should_deduct_in_base = 'yes' === get_option( 'woocommerce_eu_vat_number_deduct_in_base', 'yes' );
 		$base_country_match    = self::is_base_country_match( $vat_country_code, $vat_country_code );
 
-		if ( $base_country_match && $should_deduct_in_base ) {
+		if ( $base_country_match && $should_deduct_in_base && $exempt ) {
 			$is_valid_condition = true;
 		} elseif ( $base_country_match ) {
 			$is_valid_condition = false;
 		}
 
-		if ( $is_valid_condition ) {
-			WC()->customer->set_is_vat_exempt( $exempt );
-		}
+		// Apply the computed exemption decision. Always set the exemption status
+		// (even when false) to ensure previous exemptions are cleared.
+		WC()->customer->set_is_vat_exempt( (bool) $is_valid_condition );
 	}
 
 	/**
@@ -726,7 +732,7 @@ class WC_EU_VAT_Number {
 			 * @since 2.3.6
 			 *
 			 * @param bool   $exempt             Are they exempt?.
-			 * @param bool   $base_country_match Is Base coutry match?.
+			 * @param bool   $base_country_match Is Base country match?.
 			 * @param string $billing_country    Billing country of customer.
 			 * @param string $shipping_country   Shipping country of customer.
 			 */
@@ -1146,6 +1152,103 @@ class WC_EU_VAT_Number {
 	}
 
 	/**
+	 * When enabled, require a valid company name if a VAT number is entered (classic checkout).
+	 *
+	 * Skips when the WooCommerce checkout company field is hidden; customers cannot enter a company.
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param array $data Checkout field data.
+	 * @return void
+	 */
+	public static function validate_company_with_vat_at_checkout( $data ) {
+		if ( ! wc_eu_vat_require_company_with_vat() ) {
+			return;
+		}
+		if ( ! wc_eu_vat_checkout_company_field_is_visible() ) {
+			return;
+		}
+
+		if ( 'required' === wc_eu_vat_get_checkout_company_field_visibility_option() ) {
+			return;
+		}
+		$use_shipping_country = wc_eu_vat_use_shipping_country();
+		$billing_country      = wc_clean( $data['billing_country'] ?? '' );
+		$shipping_country     = wc_clean(
+			( ! empty( $data['shipping_country'] ) && ! empty( $data['ship_to_different_address'] ) )
+				? ( $data['shipping_country'] ?? '' )
+				: $billing_country
+		);
+		$ship_to_different    = ! empty( $data['ship_to_different_address'] );
+		$billing_vat_number   = wc_clean( $data['billing_vat_number'] ?? '' );
+		if ( ! empty( $data['shipping_country'] ) && $use_shipping_country && $ship_to_different ) {
+			$billing_vat_number = wc_clean( $data['shipping_vat_number'] ?? '' );
+		}
+		$vat_country = $billing_country;
+		if ( $use_shipping_country && $ship_to_different ) {
+			$vat_country = $shipping_country;
+		}
+		if ( ! in_array( $vat_country, self::get_eu_countries(), true ) || empty( $billing_vat_number ) ) {
+			return;
+		}
+
+		$resolved        = wc_eu_vat_resolve_company_for_vat_context(
+			$use_shipping_country,
+			$ship_to_different,
+			wc_clean( $data['billing_company'] ?? '' ),
+			wc_clean( $data['shipping_company'] ?? '' ),
+			$use_shipping_country && $ship_to_different,
+			$use_shipping_country && $ship_to_different
+		);
+		$company         = $resolved['company'];
+		$company_address = $resolved['company_address'];
+
+		$result = wc_eu_vat_validate_company_name( $company, true, $company_address );
+		if ( is_wp_error( $result ) ) {
+			$field_id = 'shipping' === $company_address ? 'shipping_company' : 'billing_company';
+			wc_add_notice( $result->get_error_message(), 'error', array( 'id' => $field_id ) );
+		}
+	}
+
+	/**
+	 * Block / Store API: require company when VAT is on the order.
+	 *
+	 * @since 3.2.0
+	 *
+	 * Skips when the setting is off, the checkout company field is hidden, or WooCommerce already requires it.
+	 *
+	 * @param WC_Order $order              Order.
+	 * @param WP_Error $validation_errors  Errors object.
+	 * @return void
+	 */
+	public static function validate_order_company_with_vat( $order, $validation_errors ) {
+		if ( ! wc_eu_vat_require_company_with_vat() ) {
+			return;
+		}
+		if ( ! wc_eu_vat_checkout_company_field_is_visible() ) {
+			return;
+		}
+		if ( 'required' === wc_eu_vat_get_checkout_company_field_visibility_option() ) {
+			return;
+		}
+		if ( ! $order instanceof WC_Order || 'store-api' !== $order->get_created_via() ) {
+			return;
+		}
+		$context = wc_eu_vat_get_company_validation_context_for_order( $order );
+		if ( null === $context ) {
+			return;
+		}
+		$result = wc_eu_vat_validate_company_name(
+			$context['company'],
+			true,
+			$context['company_address']
+		);
+		if ( is_wp_error( $result ) ) {
+			$validation_errors->add( $result->get_error_code(), $result->get_error_message() );
+		}
+	}
+
+	/**
 	 * Validate AJAX Order Review / Checkout & add errors if any.
 	 *
 	 * @param array   $data Checkout field data.
@@ -1173,13 +1276,19 @@ class WC_EU_VAT_Number {
 			$postcode    = $shipping_postcode;
 		}
 
+		if ( $doing_checkout ) {
+			self::validate_company_with_vat_at_checkout( $data );
+		}
+
 		if ( in_array( $vat_country, self::get_eu_countries(), true ) && ! empty( $billing_vat_number ) ) {
 			$billing_vat_number = self::get_normalized_vat_number( $billing_vat_number, $vat_country );
 			$is_format_valid    = self::validate_vat_format( $billing_vat_number, $vat_country );
 
 			if ( is_wp_error( $is_format_valid ) ) {
-				wc_add_notice( $is_format_valid->get_error_message(), 'error' );
+				wc_add_notice( $is_format_valid->get_error_message(), 'error', wc_eu_vat_notice_data() );
 				WC()->session->set( 'vat_number', null );
+				WC()->customer->set_is_vat_exempt( false );
+				return;
 			}
 
 			self::validate( $billing_vat_number, $vat_country, $postcode );
@@ -1201,9 +1310,10 @@ class WC_EU_VAT_Number {
 						self::maybe_apply_vat_exemption( $billing_vat_number, true );
 						break;
 					default:
-						// 'reject' - show error and block the order.
+						// 'reject' - clear stale tagged errors, then show current error and block the order.
+						wc_eu_vat_clear_tagged_error_notices_from_session();
 						if ( ! empty( self::$data['validation']['error'] ) ) {
-							wc_add_notice( self::$data['validation']['error'], 'error' );
+							wc_add_notice( self::$data['validation']['error'], 'error', wc_eu_vat_notice_data() );
 						} elseif ( false === self::$data['validation']['valid'] ) {
 							wc_add_notice(
 								sprintf(
@@ -1214,7 +1324,8 @@ class WC_EU_VAT_Number {
 									( $use_shipping_country && $ship_to_different ) ? __( 'shipping', 'woocommerce-eu-vat-number' ) : __( 'billing', 'woocommerce-eu-vat-number' ),
 									$vat_country
 								),
-								'error'
+								'error',
+								wc_eu_vat_notice_data()
 							);
 						}
 						WC()->session->set( 'vat_number', null );
@@ -1232,7 +1343,8 @@ class WC_EU_VAT_Number {
 						( $use_shipping_country && $ship_to_different ) ? __( 'shipping', 'woocommerce-eu-vat-number' ) : __( 'billing', 'woocommerce-eu-vat-number' ),
 						$billing_country
 					),
-					'error'
+					'error',
+					wc_eu_vat_notice_data()
 				);
 			}
 
@@ -1250,7 +1362,7 @@ class WC_EU_VAT_Number {
 					 */
 					$ip_address = apply_filters( 'wc_eu_vat_self_declared_ip_address', WC_Geolocation::get_ip_address() );
 					/* translators: 1: Ip Address. */
-					wc_add_notice( sprintf( __( 'Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below.', 'woocommerce-eu-vat-number' ), $ip_address, $billing_country ), 'error' );
+					wc_add_notice( sprintf( __( 'Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below.', 'woocommerce-eu-vat-number' ), $ip_address, $billing_country ), 'error', wc_eu_vat_notice_data() );
 			}
 		}
 	}
@@ -1333,6 +1445,181 @@ class WC_EU_VAT_Number {
 	}
 
 	/**
+	 * Pre-fills VAT checkout fields when Subscriptions does not map custom billing keys from the renewal order.
+	 *
+	 * Runs on {@see default_checkout_billing_vat_number} and {@see default_checkout_shipping_vat_number} so the
+	 * normal customer lookup in WC_Checkout::get_value() stays intact and other plugins can hook the same filters.
+	 *
+	 * @param string|null $value Default from customer/meta before this filter.
+	 * @param string      $input Field key (`billing_vat_number` or `shipping_vat_number`).
+	 * @return string|null
+	 */
+	public static function default_checkout_vat_number( $value, $input ) {
+		// Respect posted checkout data (including cleared fields); session wins over customer defaults next.
+		if ( isset( $_POST[ $input ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			return $value;
+		}
+
+		$prefill = self::get_checkout_vat_number_prefill();
+		if ( is_string( $prefill ) && '' !== $prefill ) {
+			return $prefill;
+		}
+
+		if ( ! empty( $value ) ) {
+			return $value;
+		}
+
+		return '';
+	}
+
+	/**
+	 * After WooCommerce Subscriptions sets up a renewal cart, copy VAT from the subscription (and optionally the
+	 * renewal order) into session so checkout autofill matches; {@see get_checkout_vat_number_prefill()} prioritizes
+	 * session so customer edits on checkout stay authoritative.
+	 *
+	 * @param WC_Subscription $subscription Subscription used to build the cart.
+	 * @param WC_Order|null   $order        Renewal order when {@see wcs_after_renewal_setup_cart_subscription} fires.
+	 * @return void
+	 */
+	public static function seed_session_vat_after_renewal_cart_setup( $subscription, $order = null ) {
+		if ( ! WC()->session || ! $subscription || ! is_a( $subscription, 'WC_Subscription' ) ) {
+			return;
+		}
+
+		$vat = wc_eu_vat_get_vat_from_order( $subscription );
+
+		if ( empty( $vat ) && $order && is_a( $order, 'WC_Order' ) ) {
+			$vat = wc_eu_vat_get_vat_from_order( $order );
+		}
+
+		if ( ! empty( $vat ) ) {
+			WC()->session->set( 'vat_number', $vat );
+		}
+	}
+
+	/**
+	 * VAT number for checkout / blocks: session first (includes values seeded on renewal cart setup and customer edits),
+	 * then subscription renewal context, then customer profile.
+	 *
+	 * @return string
+	 */
+	public static function get_checkout_vat_number_prefill() {
+		if ( WC()->session ) {
+			$session_vat = WC()->session->get( 'vat_number' );
+			if ( is_string( $session_vat ) && ! empty( $session_vat ) ) {
+				return $session_vat;
+			}
+		}
+
+		$from_renewal = self::get_vat_number_from_subscription_renewal_context();
+		if ( ! empty( $from_renewal ) ) {
+			return $from_renewal;
+		}
+
+		$customer_id = get_current_user_id();
+		if ( $customer_id ) {
+			return (string) get_user_meta( $customer_id, 'vat_number', true );
+		}
+
+		return '';
+	}
+
+	/**
+	 * When the cart contains a subscription renewal line: return VAT from the subscription (billing/legacy meta);
+	 * if empty, return VAT from the related renewal order when the cart item provides `renewal_order_id` (and it is
+	 * not the subscription id).
+	 *
+	 * @return string
+	 */
+	private static function get_vat_number_from_subscription_renewal_context() {
+		if ( ! function_exists( 'wcs_cart_contains_renewal' ) || ! WC()->cart ) {
+			return '';
+		}
+
+		$cart_item = wcs_cart_contains_renewal();
+		if ( ! $cart_item || empty( $cart_item['subscription_renewal']['subscription_id'] ) || ! function_exists( 'wcs_get_subscription' ) ) {
+			return '';
+		}
+
+		$subscription = wcs_get_subscription( absint( $cart_item['subscription_renewal']['subscription_id'] ) );
+		if ( ! $subscription ) {
+			return '';
+		}
+
+		$vat = wc_eu_vat_get_vat_from_order( $subscription );
+		if ( ! empty( $vat ) ) {
+			return $vat;
+		}
+
+		if ( ! empty( $cart_item['subscription_renewal']['renewal_order_id'] ) ) {
+			$renewal_order_id = absint( $cart_item['subscription_renewal']['renewal_order_id'] );
+			if ( $renewal_order_id && $renewal_order_id !== $subscription->get_id() ) {
+				$renewal_order = wc_get_order( $renewal_order_id );
+				if ( $renewal_order ) {
+					return wc_eu_vat_get_vat_from_order( $renewal_order );
+				}
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Sync `_billing_vat_number` from a renewal order onto the linked subscription(s) at the end of checkout.
+	 *
+	 * That meta is the canonical VAT on orders for this plugin ({@see WC_EU_VAT_Number::set_order_data()},
+	 * {@see wc_eu_vat_get_vat_from_order()}), including when validation uses the shipping VAT field.
+	 * `_shipping_vat_number` is not copied: the helper never reads it, and checkout persists the validated
+	 * number on `_billing_vat_number` only.
+	 *
+	 * Mirrors Subscriptions copying billing address onto the subscription on renewal. Only the subscription
+	 * is updated; the parent / initial order is intentionally left untouched.
+	 *
+	 * Hooked on:
+	 *  - `woocommerce_checkout_order_processed` (shortcode checkout)
+	 *  - `woocommerce_store_api_checkout_order_processed` (block checkout)
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param int|WC_Order $order_or_id The renewal order (object) or its ID.
+	 * @return void
+	 */
+	public static function maybe_sync_vat_to_subscription_on_renewal( $order_or_id ) {
+		if ( ! function_exists( 'wcs_get_subscriptions_for_renewal_order' ) || ! function_exists( 'wcs_order_contains_renewal' ) ) {
+			return;
+		}
+
+		$order = is_a( $order_or_id, 'WC_Order' ) ? $order_or_id : wc_get_order( $order_or_id );
+		if ( ! $order || ! wcs_order_contains_renewal( $order ) ) {
+			return;
+		}
+
+		$renewal_billing_vat = (string) $order->get_meta( '_billing_vat_number' );
+
+		$subscriptions = wcs_get_subscriptions_for_renewal_order( $order );
+		foreach ( $subscriptions as $subscription ) {
+			$changed = false;
+
+			$current_billing_vat = (string) $subscription->get_meta( '_billing_vat_number' );
+			if ( $renewal_billing_vat !== $current_billing_vat ) {
+				$subscription->update_meta_data( '_billing_vat_number', $renewal_billing_vat );
+				$changed = true;
+			}
+
+			if ( $changed ) {
+				$subscription->add_order_note(
+					sprintf(
+						/* translators: %s: renewal order number. */
+						__( 'VAT number updated from renewal order %s.', 'woocommerce-eu-vat-number' ),
+						$order->get_order_number()
+					)
+				);
+				$subscription->save();
+			}
+		}
+	}
+
+	/**
 	 * Performs VAT validation during Subscription renewal and charges/exempt VAT
 	 * based on the current tax settings.
 	 *
@@ -1365,7 +1652,7 @@ class WC_EU_VAT_Number {
 			return $renewal;
 		}
 
-		// Bail if the subscription is manual, not editable, or doesn't support amount changes.
+		// Bail if the subscription is manual, not editable or doesn't support amount changes.
 		if ( $subscription->is_manual() || ! $subscription->is_editable() || ! $subscription->payment_method_supports( 'subscription_amount_changes' ) ) {
 			return $renewal;
 		}

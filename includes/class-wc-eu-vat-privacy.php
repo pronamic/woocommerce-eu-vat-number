@@ -5,6 +5,10 @@
  * @package WooCommerce EU VAT Number
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'WC_Abstract_Privacy' ) ) {
 	return;
 }

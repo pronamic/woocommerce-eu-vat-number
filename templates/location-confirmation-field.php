@@ -6,6 +6,10 @@
  * @since 2.2.0
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 ?>
 <p class="form-row location_confirmation terms">
 	<label for="location_confirmation" class="checkbox"><input type="checkbox" class="input-checkbox" name="location_confirmation" <?php checked( $location_confirmation_is_checked, true ); ?> id="location_confirmation" /> <span>

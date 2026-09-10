@@ -82,9 +82,10 @@ class WC_EU_VAT_My_Account {
 				$postcode = $shipping_postcode;
 			}
 
-			if ( $this->validate( $vat_number, $country, $postcode ) ) {
-				WC_EU_VAT_Number::maybe_set_vat_exempt( true, $billing_country, $shipping_country );
-			}
+			// Call unconditionally (not only when truthy) so a customer previously exempted by a
+			// valid VAT number has that exemption cleared once it no longer validates as one.
+			$is_vat_exempt = $this->validate( $vat_number, $country, $postcode );
+			WC_EU_VAT_Number::maybe_set_vat_exempt( (bool) $is_vat_exempt, $billing_country, $shipping_country );
 		} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			if ( 'accept' === get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' ) ) {
 				$vat_number_from_session = WC()->session->get( 'vat-number' );
@@ -211,6 +212,13 @@ class WC_EU_VAT_My_Account {
 	/**
 	 * Validate a VAT number.
 	 *
+	 * Honors the "Failed Validation Handling" setting the same way checkout does: a VAT
+	 * number that fails VIES/UK validation is only rejected outright when that setting is
+	 * 'reject'. Otherwise it is allowed to be saved, so a store that accepts non-VIES numbers
+	 * (e.g. Portuguese NIFs) at checkout also accepts them on the My Account page. A VAT number
+	 * that doesn't match its country's format is always rejected regardless of the setting,
+	 * matching checkout.
+	 *
 	 * @version 2.3.0
 	 * @since 2.3.0
 	 * @param  string $vat_number  VAT number passed by the form.
@@ -218,7 +226,7 @@ class WC_EU_VAT_My_Account {
 	 * @param  string $postcode    Postcode of the customer.
 	 * @param  string $current_vat VAT number saved in database.
 	 *
-	 * @return boolean
+	 * @return boolean True if the VAT number should be treated as VAT-exempt.
 	 * @throws Exception For invalid VAT Number.
 	 */
 	public function validate( $vat_number, $country, $postcode = '', $current_vat = '' ) {
@@ -243,13 +251,37 @@ class WC_EU_VAT_My_Account {
 			);
 		}
 
+		$format_valid = WC_EU_VAT_Number::validate_vat_format( $vat_number, $country );
+
+		if ( is_wp_error( $format_valid ) ) {
+			throw new Exception( esc_html( $format_valid->get_error_message() ) );
+		}
+
 		$valid = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
 
 		if ( is_wp_error( $valid ) ) {
+			// Only a genuine VIES/UK API communication failure is eligible for the failure-handling
+			// setting, same as checkout. Format/input errors (e.g. a country-code mismatch) are always rejected.
+			if ( 'wc-eu-vat-api-error' === $valid->get_error_code() ) {
+				$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
+
+				if ( 'reject' !== $fail_handler ) {
+					return 'accept' === $fail_handler;
+				}
+			}
+
 			throw new Exception( esc_html( $valid->get_error_message() ) );
 		}
 
 		if ( ! $valid ) {
+			$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
+
+			// Mirror checkout: only block saving when the store is configured to reject failed validations.
+			if ( 'reject' !== $fail_handler ) {
+				// 'accept' treats the number as VAT-exempt like a valid one; 'accept_with_vat' saves it without exempting VAT.
+				return 'accept' === $fail_handler;
+			}
+
 			throw new Exception(
 				sprintf(
 					/* translators: %1$s VAT number field label, %2$s VAT number, %3$s Country.*/

@@ -2,40 +2,40 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 3.1.0\n"
+"Project-Id-Version: WooCommerce EU VAT Number 3.2.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/target-repo\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-16T10:38:10+00:00\n"
+"POT-Creation-Date: 2026-08-26T19:41:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woocommerce-eu-vat-number\n"
 
 #. Plugin Name of the plugin
-#: woocommerce-eu-vat-number.php
+#: woocommerce-eu-vat-number.php:3
 msgid "WooCommerce EU VAT Number"
 msgstr ""
 
 #. Plugin URI of the plugin
-#: woocommerce-eu-vat-number.php
+#: woocommerce-eu-vat-number.php:5
 msgid "https://woocommerce.com/products/eu-vat-number/"
 msgstr ""
 
 #. Description of the plugin
-#: woocommerce-eu-vat-number.php
+#: woocommerce-eu-vat-number.php:6
 msgid "The EU VAT Number extension lets you collect and validate EU VAT numbers during checkout to identify B2B transactions verses B2C. IP Addresses can also be validated to ensure they match the billing address. EU businesses with a valid VAT number can have their VAT removed prior to payment."
 msgstr ""
 
 #. Author of the plugin
-#: woocommerce-eu-vat-number.php
+#: woocommerce-eu-vat-number.php:8
 msgid "WooCommerce"
 msgstr ""
 
 #. Author URI of the plugin
-#: woocommerce-eu-vat-number.php
+#: woocommerce-eu-vat-number.php:9
 msgid "https://woocommerce.com/"
 msgstr ""
 
@@ -45,16 +45,16 @@ msgstr ""
 #: includes/class-wc-eu-vat-admin.php:477
 #: includes/class-wc-eu-vat-admin.php:495
 #: includes/class-wc-eu-vat-admin.php:502
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:336
-#: includes/class-wc-eu-vat-my-account.php:134
-#: includes/class-wc-eu-vat-my-account.php:153
-#: includes/class-wc-eu-vat-my-account.php:175
-#: includes/class-wc-eu-vat-my-account.php:240
-#: includes/class-wc-eu-vat-my-account.php:257
-#: includes/class-wc-eu-vat-number.php:244
-#: includes/class-wc-eu-vat-number.php:1212
-#: includes/class-wc-eu-vat-number.php:1231
-#: includes/class-wc-eu-vat-privacy.php:157
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:386
+#: includes/class-wc-eu-vat-my-account.php:135
+#: includes/class-wc-eu-vat-my-account.php:154
+#: includes/class-wc-eu-vat-my-account.php:176
+#: includes/class-wc-eu-vat-my-account.php:248
+#: includes/class-wc-eu-vat-my-account.php:289
+#: includes/class-wc-eu-vat-number.php:251
+#: includes/class-wc-eu-vat-number.php:1322
+#: includes/class-wc-eu-vat-number.php:1342
+#: includes/class-wc-eu-vat-privacy.php:161
 #: includes/class-wc-eu-vat-report-ec-sales-list.php:218
 #: templates/my-account/my-vat-number.php:22
 msgid "VAT number"
@@ -62,7 +62,7 @@ msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:134
 #: includes/class-wc-eu-vat-admin.php:332
-#: includes/class-wc-eu-vat-privacy.php:30
+#: includes/class-wc-eu-vat-privacy.php:34
 msgid "EU VAT"
 msgstr ""
 
@@ -117,18 +117,18 @@ msgid "(self-declared)"
 msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:429
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:338
-#: includes/class-wc-eu-vat-my-account.php:234
-#: includes/class-wc-eu-vat-number.php:1214
-#: includes/class-wc-eu-vat-number.php:1232
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:388
+#: includes/class-wc-eu-vat-my-account.php:242
+#: includes/class-wc-eu-vat-number.php:1324
+#: includes/class-wc-eu-vat-number.php:1343
 msgid "billing"
 msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:433
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:338
-#: includes/class-wc-eu-vat-my-account.php:234
-#: includes/class-wc-eu-vat-number.php:1214
-#: includes/class-wc-eu-vat-number.php:1232
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:388
+#: includes/class-wc-eu-vat-my-account.php:242
+#: includes/class-wc-eu-vat-number.php:1324
+#: includes/class-wc-eu-vat-number.php:1343
 msgid "shipping"
 msgstr ""
 
@@ -173,212 +173,226 @@ msgstr ""
 msgid "WC EU VAT Number: Failed to register script %1$s: %2$s"
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:76
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:103
 msgid "Invalid VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:134
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:167
 msgid "Location confirmation."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:139
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:172
 msgid "VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:156
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:189
 msgid "VAT Data"
 msgstr ""
 
 #. translators: 1: VAT number field label, 2: VAT Number, 3: Address type, 4: Country
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:335
-#: includes/class-wc-eu-vat-number.php:1211
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:385
+#: includes/class-wc-eu-vat-number.php:1321
 #, php-format
 msgid "You have entered an invalid %1$s (%2$s) for your %3$s country (%4$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:227
+#: includes/class-wc-eu-vat-my-account.php:235
 msgid "VAT number cannot be empty."
 msgstr ""
 
 #. translators: %1$s VAT number field label, %2$s Country type.
-#: includes/class-wc-eu-vat-my-account.php:239
+#: includes/class-wc-eu-vat-my-account.php:247
 #, php-format
 msgid "%1$s can not be validated because the %2$s country is missing. Please update your %2$s address."
 msgstr ""
 
 #. translators: %1$s VAT number field label, %2$s VAT number, %3$s Country.
-#: includes/class-wc-eu-vat-my-account.php:256
+#: includes/class-wc-eu-vat-my-account.php:288
 #, php-format
 msgid "You have entered an invalid %1$s (%2$s) for your country (%3$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:308
+#: includes/class-wc-eu-vat-my-account.php:340
 msgid "VAT number removed successfully!"
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:310
+#: includes/class-wc-eu-vat-my-account.php:342
 msgid "VAT number saved successfully!"
 msgstr ""
 
-#: includes/class-wc-eu-vat-my-account.php:312
+#: includes/class-wc-eu-vat-my-account.php:344
 msgid "VAT number updated successfully!"
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:449
+#: includes/class-wc-eu-vat-number.php:198
+msgid "Company"
+msgstr ""
+
+#: includes/class-wc-eu-vat-number.php:199
+msgid "Company (optional)"
+msgstr ""
+
+#: includes/class-wc-eu-vat-number.php:455
 msgid "The VAT number is incomplete."
 msgstr ""
 
 #. translators: %1$s - VAT number field label, %2$s - VAT Number from user, %3$s - Billing country.
-#: includes/class-wc-eu-vat-number.php:457
+#: includes/class-wc-eu-vat-number.php:463
 #, php-format
 msgid "You have entered an invalid country code for %1$s (%2$s) for your country (%3$s)."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:471
-#: includes/class-wc-eu-vat-number.php:512
-#: includes/class-wc-eu-vat-number.php:514
+#: includes/class-wc-eu-vat-number.php:477
+#: includes/class-wc-eu-vat-number.php:518
+#: includes/class-wc-eu-vat-number.php:520
 #: includes/vies/class-vies-client.php:92
 msgid "Error communicating with the VAT validation server - please try again."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:494
+#: includes/class-wc-eu-vat-number.php:500
 msgid "The VAT validation service for this country is temporarily unavailable. Please try again later."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:501
+#: includes/class-wc-eu-vat-number.php:507
 msgid "The VAT validation service is temporarily unavailable due to high load. Please try again later."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:508
+#: includes/class-wc-eu-vat-number.php:514
 msgid "The VAT validation service timed out. Please try again later."
 msgstr ""
 
 #. translators: %1$s - regex pattern, $2$s - country code.
-#: includes/class-wc-eu-vat-number.php:569
+#: includes/class-wc-eu-vat-number.php:575
 #, php-format
 msgid "The regex pattern %1$s for the country code %2$s is invalid."
 msgstr ""
 
 #. translators: %s: VAT Number
-#: includes/class-wc-eu-vat-number.php:1003
+#: includes/class-wc-eu-vat-number.php:1009
 #, php-format
 msgid "VAT Number: %s"
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:1126
+#: includes/class-wc-eu-vat-number.php:1132
 msgid "A valid two character country code is required at the start of the VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:1133
+#: includes/class-wc-eu-vat-number.php:1139
 msgid "The country code provided in the VAT Number is not supported."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:1145
+#: includes/class-wc-eu-vat-number.php:1151
 msgid "The VAT number format is incorrect."
 msgstr ""
 
 #. translators: 1: VAT number field label, 2: Address type, 3: Billing country
-#: includes/class-wc-eu-vat-number.php:1230
+#: includes/class-wc-eu-vat-number.php:1341
 #, php-format
 msgid "%1$s is a required field for your %2$s country (%3$s)."
 msgstr ""
 
 #. translators: 1: Ip Address.
-#: includes/class-wc-eu-vat-number.php:1253
+#: includes/class-wc-eu-vat-number.php:1365
 #, php-format
 msgid "Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:1271
+#: includes/class-wc-eu-vat-number.php:1383
 msgid "The script file could not be read or does not exist at the specified location. Please verify the file path and permissions."
 msgstr ""
 
+#. translators: %s: renewal order number.
+#: includes/class-wc-eu-vat-number.php:1613
+#, php-format
+msgid "VAT number updated from renewal order %s."
+msgstr ""
+
 #. translators: %s is the error message.
-#: includes/class-wc-eu-vat-number.php:1395
+#: includes/class-wc-eu-vat-number.php:1682
 #, php-format
 msgid "VAT validation skipped on this renewal order due to the error: %s"
 msgstr ""
 
 #. translators: %s is the VAT number.
-#: includes/class-wc-eu-vat-number.php:1416
+#: includes/class-wc-eu-vat-number.php:1703
 #, php-format
 msgid "VAT: %1$s validation successful. VAT was exempted for the renewal order due to the current \"Remove VAT for Businesses in Your Base Country\" setting."
 msgstr ""
 
 #. translators: %s is the VAT number.
-#: includes/class-wc-eu-vat-number.php:1423
+#: includes/class-wc-eu-vat-number.php:1710
 #, php-format
 msgid "VAT: %1$s validation successful. VAT was charged for the renewal order due to the current \"Remove VAT for Businesses in Your Base Country\" setting."
 msgstr ""
 
 #. translators: %s is the VAT number.
-#: includes/class-wc-eu-vat-number.php:1439
+#: includes/class-wc-eu-vat-number.php:1726
 #, php-format
 msgid "VAT: %1$s validation failed. VAT was charged to the renewal order due to the current \"Failed Validation Handling\" setting."
 msgstr ""
 
 #. translators: %s is the VAT number.
-#: includes/class-wc-eu-vat-number.php:1447
+#: includes/class-wc-eu-vat-number.php:1734
 #, php-format
 msgid "VAT: %1$s validation failed. VAT was not charged to the renewal order due to the current \"Failed Validation Handling\" setting."
 msgstr ""
 
-#: includes/class-wc-eu-vat-number.php:1477
+#: includes/class-wc-eu-vat-number.php:1764
 msgid "Subscription VAT exempt status updated and totals recalculated due to the VAT validation on the renewal order."
 msgstr ""
 
 #. translators: %s is the error message.
-#: includes/class-wc-eu-vat-number.php:1486
+#: includes/class-wc-eu-vat-number.php:1773
 #, php-format
 msgid "VAT validation failed for the renewal order due to the error: %s"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:32
 #: includes/class-wc-eu-vat-privacy.php:36
+#: includes/class-wc-eu-vat-privacy.php:40
 msgid "WooCommerce EU VAT Order Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:33
-#: includes/class-wc-eu-vat-privacy.php:35
+#: includes/class-wc-eu-vat-privacy.php:37
+#: includes/class-wc-eu-vat-privacy.php:39
 msgid "WooCommerce EU VAT Customer Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:39
+#: includes/class-wc-eu-vat-privacy.php:43
 msgid "WooCommerce EU VAT Subscriptions Data"
 msgstr ""
 
 #. translators: Privacy Docs URL.
-#: includes/class-wc-eu-vat-privacy.php:84
+#: includes/class-wc-eu-vat-privacy.php:88
 #, php-format
 msgid "By using this extension, you may be storing personal data or sharing data with an external service. <a href=\"%s\" target=\"_blank\">Learn more about how this works, including what you may want to include in your privacy policy.</a>"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:109
+#: includes/class-wc-eu-vat-privacy.php:113
 msgid "Orders"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:113
+#: includes/class-wc-eu-vat-privacy.php:117
 msgid "EU VAT number"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:117
+#: includes/class-wc-eu-vat-privacy.php:121
 msgid "EU Billing VAT number"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:121
+#: includes/class-wc-eu-vat-privacy.php:125
 msgid "EU VAT country"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:153
+#: includes/class-wc-eu-vat-privacy.php:157
 msgid "Customer Data"
 msgstr ""
 
-#: includes/class-wc-eu-vat-privacy.php:191
+#: includes/class-wc-eu-vat-privacy.php:195
 msgid "EU VAT User Data Erased."
 msgstr ""
 
 #. translators: Post type, Order ID.
-#: includes/class-wc-eu-vat-privacy.php:297
+#: includes/class-wc-eu-vat-privacy.php:301
 #, php-format
 msgid "Removed EU VAT data from %1$s %2$s."
 msgstr ""
@@ -579,74 +593,104 @@ msgid "No, allow VAT numbers without country prefix"
 msgstr ""
 
 #: includes/data/eu-vat-number-settings.php:95
-msgid "Enable B2B Transactions"
+msgid "Require company name when a VAT number is entered"
 msgstr ""
 
 #: includes/data/eu-vat-number-settings.php:96
+msgid "When enabled, customers who enter a VAT number on checkout must also enter a company name (billing or shipping, matching where the VAT number applies). Ensure the company field is visible in your checkout if you use this option."
+msgstr ""
+
+#: includes/data/eu-vat-number-settings.php:102
+msgid "Enable B2B Transactions"
+msgstr ""
+
+#: includes/data/eu-vat-number-settings.php:103
 msgid "This will force users to check out with a VAT number, useful for sites that transact purely from B2B."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:104
+#: includes/data/eu-vat-number-settings.php:111
 msgid "Disable Express Pay"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:105
+#: includes/data/eu-vat-number-settings.php:112
 msgid "Prevent incompatible payment methods."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:106
+#: includes/data/eu-vat-number-settings.php:113
 msgid "This will prevent payment methods that do not require customers to enter a VAT number. Limited to compatible payment gateways."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:118
+#: includes/data/eu-vat-number-settings.php:125
 msgid "EU VAT Digital Goods Handling"
 msgstr ""
 
 #. translators: %1$s Opening anchor tag, %2$s Closing anchor tag
-#: includes/data/eu-vat-number-settings.php:120
+#: includes/data/eu-vat-number-settings.php:127
 #, php-format
 msgid "As of January 1st, 2015, EU VAT laws have been changed for digital goods (affecting B2C transactions only). The VAT on digital goods must be calculated based on the customer location, and you need to collect evidence of this (IP address and Billing Address). You also need to setup VAT rates to charge the correct amount. %1$sRead this guide%2$s for instructions on doing this."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:124
+#: includes/data/eu-vat-number-settings.php:131
 msgid "Tax Classes for Digital Goods"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:125
+#: includes/data/eu-vat-number-settings.php:132
 msgid "This option tells the plugin which of your tax classes are for digital goods. This affects the taxable location of the user as of 1st Jan 2015."
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:134
+#: includes/data/eu-vat-number-settings.php:141
 msgid "Select some tax classes"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:138
+#: includes/data/eu-vat-number-settings.php:145
 msgid "Collect and Validate Evidence"
 msgstr ""
 
-#: includes/data/eu-vat-number-settings.php:139
+#: includes/data/eu-vat-number-settings.php:146
 msgid "This validates the customer IP address against their billing address, and prompts the customer to self-declare their address if they do not match. Applies to digital goods and services only."
 msgstr ""
 
-#: includes/wc-eu-vat-functions.php:52
+#: includes/wc-eu-vat-functions.php:120
 msgid "Supply of services subject to reverse charge"
 msgstr ""
 
 #. translators: %1$s: Tax label (VAT or Tax).
-#: includes/wc-eu-vat-functions.php:71
+#: includes/wc-eu-vat-functions.php:139
 #, php-format
 msgid " (inc. 0.00%% %1$s) "
 msgstr ""
 
+#: includes/wc-eu-vat-functions.php:226
+#: build/frontend.js:3
+msgid "Shipping company name"
+msgstr ""
+
+#: includes/wc-eu-vat-functions.php:229
+#: build/frontend.js:3
+msgid "Billing company name"
+msgstr ""
+
+#: includes/wc-eu-vat-functions.php:232
+#: build/frontend.js:3
+msgid "Company name"
+msgstr ""
+
+#. translators: %s: Label such as "Billing company name" or "Company name".
+#: includes/wc-eu-vat-functions.php:242
+#: build/frontend.js:4
+#, php-format,js-format
+msgid "%s is required when providing a VAT number."
+msgstr ""
+
 #. translators: %s: VAT number
-#: includes/wc-eu-vat-functions.php:113
+#: includes/wc-eu-vat-functions.php:444
 #, php-format
 msgid "VAT number %s was validated successfully."
 msgstr ""
 
 #. translators: %s billing country
 #. translators: %s is the billing country full name, e.g. Finland, France, or Spain.
-#: templates/location-confirmation-field.php:15
+#: templates/location-confirmation-field.php:19
 #: build/frontend.js:3
 #, php-format,js-format
 msgid "I am established, have my permanent address, or usually reside within <strong>%s</strong>."
@@ -658,62 +702,62 @@ msgstr ""
 
 #. translators: %1$s: Plugin page link start %2$s Link end
 #. translators: %1$s: Minimum version %2$s: Plugin page link start %3$s Link end
-#: woocommerce-eu-vat-number.php:173
-#: woocommerce-eu-vat-number.php:185
-#: woocommerce-eu-vat-number.php:196
-#: woocommerce-eu-vat-number.php:243
+#: woocommerce-eu-vat-number.php:183
+#: woocommerce-eu-vat-number.php:195
+#: woocommerce-eu-vat-number.php:206
+#: woocommerce-eu-vat-number.php:253
 msgid "WooCommerce EU VAT Number is inactive."
 msgstr ""
 
 #. translators: %1$s: Plugin page link start %2$s Link end
-#: woocommerce-eu-vat-number.php:173
+#: woocommerce-eu-vat-number.php:183
 #, php-format
 msgid "The WooCommerce plugin must be active for EU VAT Number to work. %1$sPlease install and activate WooCommerce%2$s."
 msgstr ""
 
 #. translators: %1$s: Minimum version %2$s: Plugin page link start %3$s Link end
-#: woocommerce-eu-vat-number.php:185
+#: woocommerce-eu-vat-number.php:195
 #, php-format
 msgid "The WooCommerce plugin must be at least version %1$s for EU VAT Number to work. %2$sPlease upgrade WooCommerce%3$s."
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:196
+#: woocommerce-eu-vat-number.php:206
 msgid "Your server does not provide SOAP support which is required functionality for communicating with VIES. You will need to reach out to your web hosting provider to get information on how to enable this functionality on your server."
 msgstr ""
 
 #. translators: %1$s: Settings link start %2$s: Link end
-#: woocommerce-eu-vat-number.php:247
+#: woocommerce-eu-vat-number.php:257
 #, php-format
 msgid "The EU VAT Number extension functionality requires taxes be enabled on your store. To do so, go to %1$sWooCommerce > Settings%2$s, check the Enable tax rates and calculations checkbox, and click the Save changes button."
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:328
+#: woocommerce-eu-vat-number.php:338
 msgid "Settings"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:348
+#: woocommerce-eu-vat-number.php:358
 msgid "View Plugin Documentation"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:348
+#: woocommerce-eu-vat-number.php:358
 msgid "Docs"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:354
+#: woocommerce-eu-vat-number.php:364
 msgid "View Plugin Changelog"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:354
+#: woocommerce-eu-vat-number.php:364
 msgid "Changelog"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:360
+#: woocommerce-eu-vat-number.php:370
 msgid "Support"
 msgstr ""
 
-#: woocommerce-eu-vat-number.php:511
+#: woocommerce-eu-vat-number.php:521
 #: build/blocks.js:1
-#: build/frontend.js:3
+#: build/frontend.js:4
 msgid "VAT Number"
 msgstr ""
 
