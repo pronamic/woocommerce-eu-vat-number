@@ -15,14 +15,7 @@ $tax_classes = WC_Tax::get_tax_classes();
 $classes_options             = array();
 $classes_options['standard'] = __( 'Standard', 'woocommerce-eu-vat-number' );
 
-$wc_eu_vat_express_pay_override_compatible_sniffs = array(
-	function_exists( 'wcpay_init' ),
-	function_exists( 'woocommerce_gateway_stripe' ),
-	class_exists( 'WooCommerce_Square_Loader' ),
-	class_exists( 'WC_PayPal_Braintree_Loader' ),
-);
-
-$wc_eu_vat_express_pay_override_compatible = in_array( true, $wc_eu_vat_express_pay_override_compatible_sniffs, true );
+$wc_eu_vat_express_pay_override_compatible = WC_EU_VAT_Number_Init::has_supported_express_payment_gateway();
 
 foreach ( $tax_classes as $class ) {
 	$classes_options[ sanitize_title( $class ) ] = esc_html( $class );

@@ -2,8 +2,14 @@
 /**
  * Location confirmation field template.
  *
+ * Rendered by WC_EU_VAT_Number through wc_get_template(), which extracts the
+ * arguments below into this scope.
+ *
  * @package woocommerce-eu-vat-number/templates
  * @since 2.2.0
+ *
+ * @var bool     $location_confirmation_is_checked Whether the checkbox was submitted.
+ * @var string[] $countries                        Country code => country name.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

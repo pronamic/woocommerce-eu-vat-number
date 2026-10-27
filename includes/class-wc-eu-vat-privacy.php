@@ -72,6 +72,7 @@ class WC_EU_VAT_Privacy extends WC_Abstract_Privacy {
 
 		// Using wc_get_orders for WC orders & data store for subscriptions.
 		if ( 'subscription' === $post_type ) {
+			// @phpstan-ignore-next-line -- get_orders() is declared by the subscription data store that WooCommerce Subscriptions registers, not by WC_Data_Store itself.
 			$result = WC_Data_Store::load( $post_type )->get_orders( $order_query );
 		} else {
 			$result = wc_get_orders( $order_query );

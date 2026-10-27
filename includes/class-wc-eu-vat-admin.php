@@ -26,8 +26,8 @@ class WC_EU_VAT_Admin {
 	 */
 	public static function init() {
 		add_action( 'before_woocommerce_init', array( __CLASS__, 'init_form_fields' ) );
-		add_action( 'woocommerce_admin_billing_fields', array( __CLASS__, 'admin_billing_fields' ) );
-		add_action( 'woocommerce_admin_shipping_fields', array( __CLASS__, 'admin_shipping_fields' ) );
+		add_filter( 'woocommerce_admin_billing_fields', array( __CLASS__, 'admin_billing_fields' ) );
+		add_filter( 'woocommerce_admin_shipping_fields', array( __CLASS__, 'admin_shipping_fields' ) );
 		add_filter( 'woocommerce_order_get__shipping_vat_number', array( __CLASS__, 'get_vat_number_from_order' ), 10, 2 );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_boxes' ), 30 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'styles_and_scripts' ) );
@@ -48,6 +48,9 @@ class WC_EU_VAT_Admin {
 		// Notice for adjust vat number field on Block checkout.
 		add_action( 'wp_ajax_wc_eu_vat_dismiss_checkout_notice', array( __CLASS__, 'dismiss_block_checkout_notice' ), 10 );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_admin_notice_for_block_checkout' ) );
+
+		// Notice about express payment methods being incompatible with B2B transactions.
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_express_payment_notice' ) );
 	}
 
 	/**
@@ -630,6 +633,67 @@ class WC_EU_VAT_Admin {
 	 */
 	public static function reset_admin_notice_display( $old_value, $value, $option ) {
 		delete_option( 'woocommerce_eu_vat_number_dismiss_disclaimer' );
+	}
+
+	/**
+	 * Tell the administrator what enabling B2B transactions does to express payment methods.
+	 *
+	 * Express checkout buttons give the shopper no way to supply a VAT number, so with B2B
+	 * transactions enforced an order placed through one of them is rejected only after the
+	 * payment has been authorised. The store owner needs to know that up front, whether the
+	 * plugin is hiding those buttons for them or they have opted out of it.
+	 *
+	 * The copy names the common wallets only as examples. Which buttons are actually affected
+	 * depends on the gateways installed, and a Braintree-only store sees a PayPal button here
+	 * rather than any of the wallets.
+	 *
+	 * @since 3.2.2
+	 */
+	public static function maybe_show_express_payment_notice() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown
+			return;
+		}
+
+		// Only on WooCommerce > Settings > Tax, where these settings live.
+		$screen = get_current_screen();
+
+		if ( ! $screen || 'woocommerce_page_wc-settings' !== $screen->id ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading the settings tab, not acting on input.
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+
+		if ( 'tax' !== $tab ) {
+			return;
+		}
+
+		if ( ! wc_tax_enabled() || 'yes' !== get_option( 'woocommerce_eu_vat_number_b2b', 'no' ) ) {
+			return;
+		}
+
+		/*
+		 * With no gateway this extension can act on there is nothing useful to say: the
+		 * "Disable Express Pay" setting is not rendered either. Gateways this extension
+		 * does not know about can opt in through the detection filter.
+		 */
+		if ( ! WC_EU_VAT_Number_Init::has_supported_express_payment_gateway() ) {
+			return;
+		}
+
+		if ( WC_EU_VAT_Number_Init::should_prevent_incompatible_payment_methods() ) {
+			$notice_class = 'notice notice-info is-dismissible';
+			$message      = __( 'Express checkout buttons, such as Apple Pay, Google Pay, WooPay and PayPal, give customers no way to enter a VAT number. Because Enable B2B Transactions is on, this extension hides them for the payment gateways it supports.', 'woocommerce-eu-vat-number' );
+		} else {
+			$notice_class = 'notice notice-warning';
+			$message      = __( 'Express checkout buttons, such as Apple Pay, Google Pay, WooPay and PayPal, give customers no way to enter a VAT number. Because Enable B2B Transactions is on, an order placed through one of them is rejected for a missing VAT number after the payment has already been authorised. Switch on Disable Express Pay, or turn those buttons off in your payment gateway.', 'woocommerce-eu-vat-number' );
+		}
+
+		printf(
+			'<div class="%1$s wc-eu-vat-express-payment-notice"><p>%2$s</p></div>',
+			esc_attr( $notice_class ),
+			esc_html( $message )
+		);
 	}
 
 	/**

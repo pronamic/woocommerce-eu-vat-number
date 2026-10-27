@@ -23,6 +23,14 @@ use Automattic\WooCommerce\StoreApi\Schemas\ExtendSchema;
  */
 class WC_EU_VAT_Extend_Store_Endpoint {
 	/**
+	 * Whether the current validation call must avoid registry requests.
+	 *
+	 * @since 3.2.2
+	 * @var bool
+	 */
+	private $cache_only_validation = false;
+
+	/**
 	 * Plugin Identifier, unique to each plugin.
 	 *
 	 * @var string
@@ -38,6 +46,10 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 
 		// Handle Checkout.
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( $this, 'update_order_meta' ), 10, 2 );
+
+		// Re-check the VAT exemption whenever the customer address changes, before totals are calculated.
+		add_action( 'woocommerce_store_api_cart_update_customer_from_request', array( $this, 'refresh_vat_exemption' ) );
+		add_action( 'woocommerce_store_api_checkout_update_customer_from_request', array( $this, 'refresh_vat_exemption' ) );
 	}
 
 	/**
@@ -68,10 +80,14 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$postcode = wc_clean( $order->get_billing_postcode() );
 		}
 
-		$customer_obj = WC()->customer;
-		if ( $customer_obj && $customer_obj->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
-			$country  = $customer_obj->get_shipping_country() ? wc_clean( $customer_obj->get_shipping_country() ) : $country;
-			$postcode = $customer_obj->get_shipping_postcode() ? wc_clean( $customer_obj->get_shipping_postcode() ) : '';
+		// Match get_vat_country_from_customer(): with local pickup the cart needs no shipping address, so use billing.
+		$needs_shipping        = WC()->cart ? WC()->cart->needs_shipping_address() : $order->needs_shipping_address();
+		$used_shipping_country = false;
+		$customer_obj          = WC()->customer;
+		if ( $customer_obj && $needs_shipping && $customer_obj->has_shipping_address() && wc_eu_vat_use_shipping_country() ) {
+			$used_shipping_country = (bool) $customer_obj->get_shipping_country();
+			$country               = $customer_obj->get_shipping_country() ? wc_clean( $customer_obj->get_shipping_country() ) : $country;
+			$postcode              = $customer_obj->get_shipping_postcode() ? wc_clean( $customer_obj->get_shipping_postcode() ) : '';
 		}
 
 		// Skip if country is not in the EU.
@@ -91,7 +107,15 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 
 		if ( ! empty( $eu_vat_ext['vat_number'] ) ) {
 			$vat_number = $eu_vat_ext['vat_number'];
+		} elseif ( WC()->session ) {
+			// Partial Store API requests (e.g. only payment_method) omit extensions; fall back like get_cart_data().
+			$vat_number = WC()->session->get( 'vat_number' );
+		}
 
+		$vat_number = is_string( $vat_number ) ? wc_clean( $vat_number ) : '';
+
+		// Validate against the order's country, whether the number came from the request or the session.
+		if ( $vat_number ) {
 			// Normalize the VAT number prefix before validation (handles cases like Greece where GR != EL).
 			$vat_number = WC_EU_VAT_Number::get_normalized_vat_number( $vat_number, $country );
 
@@ -102,12 +126,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 				wc_eu_vat_clear_tagged_error_notices_from_session();
 				wc_add_notice( __( 'Invalid VAT number.', 'woocommerce-eu-vat-number' ), 'error', wc_eu_vat_notice_data() );
 			}
-		} elseif ( WC()->session ) {
-			// Partial Store API requests (e.g. only payment_method) omit extensions; fall back like get_cart_data().
-			$vat_number = WC()->session->get( 'vat_number' );
 		}
-
-		$vat_number = is_string( $vat_number ) ? wc_clean( $vat_number ) : '';
 
 		$customer_id = $order->get_customer_id();
 
@@ -126,6 +145,12 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 
 		if ( ! $vat_number ) {
 			return;
+		}
+
+		// validate() reads the country from the session; point it at the order's country, not a value left by a cart request.
+		if ( WC()->session ) {
+			WC()->session->set( 'wc_eu_vat_current_country', $country );
+			WC()->session->set( 'wc_eu_vat_used_shipping_country', $used_shipping_country );
 		}
 
 		$data = $this->validate( $vat_number );
@@ -213,7 +238,9 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 	public function get_cart_data() {
 		$vat_number = WC_EU_VAT_Number::get_checkout_vat_number_prefill();
 
-		$validation_result = $this->validate( $vat_number );
+		// The cart response is rebuilt on every cart change, and the number here is one the
+		// customer already submitted, so answer from the cache rather than the registry.
+		$validation_result = $this->validate_from_cache( $vat_number );
 		$vat_number        = $validation_result['vat_number'] ?? $vat_number;
 
 		return array(
@@ -253,18 +280,12 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			return;
 		}
 
-		$use_shipping_country = array_key_exists( 'use_shipping_country', $data ) ? (bool) $data['use_shipping_country'] : wc_eu_vat_use_shipping_country();
-		$needs_shipping       = array_key_exists( 'needs_shipping', $data ) ? (bool) $data['needs_shipping'] : ( WC()->cart ? WC()->cart->needs_shipping_address() : false );
-		$billing_country      = isset( $data['billing_country'] ) ? $data['billing_country'] : WC()->customer->get_billing_country();
-		$shipping_country     = isset( $data['shipping_country'] ) ? $data['shipping_country'] : WC()->customer->get_shipping_country();
-		$use_shipping_context = $needs_shipping && $use_shipping_country;
-
-		if ( empty( $shipping_country ) ) {
-			$shipping_country = $billing_country;
-		}
-
-		WC()->session->set( 'wc_eu_vat_current_country', $use_shipping_context ? $shipping_country : $billing_country );
-		WC()->session->set( 'wc_eu_vat_used_shipping_country', $use_shipping_context );
+		/*
+		 * The billing_country, shipping_country, needs_shipping and use_shipping_country keys in $data
+		 * are client-supplied and deliberately ignored: the validation country must come from the
+		 * customer address stored on the server, or a guest could validate against any country.
+		 */
+		$this->set_vat_country_from_customer();
 
 		$validation_result = $this->validate( $vat_number );
 		$vat_number        = $validation_result['vat_number'] ?? $vat_number;
@@ -279,12 +300,113 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 	}
 
 	/**
+	 * Re-validates the session VAT number against the customer's current address and re-applies the exemption.
+	 *
+	 * Hooked to the Store API customer-update actions, which fire before cart totals are calculated, so a
+	 * stale exemption from a previous address never carries into the totals or the order.
+	 *
+	 * @since 3.2.2
+	 * @return void
+	 */
+	public function refresh_vat_exemption() {
+		if ( ! WC()->session || ! WC()->customer ) {
+			return;
+		}
+
+		$vat_number = WC()->session->get( 'vat_number' );
+
+		if ( ! is_string( $vat_number ) || '' === $vat_number ) {
+			return;
+		}
+
+		list( $country, $use_shipping_context ) = $this->get_vat_country_from_customer();
+
+		// The block checkout sends update-customer on every address edit; only re-validate (and call VIES) when the country changes.
+		if ( WC()->session->get( 'wc_eu_vat_current_country' ) === $country
+			&& (bool) WC()->session->get( 'wc_eu_vat_used_shipping_country' ) === $use_shipping_context ) {
+			return;
+		}
+
+		$this->set_vat_country_from_customer();
+		$this->maybe_set_vat_exemption( $this->validate( $vat_number ) );
+	}
+
+	/**
+	 * Returns the VAT validation country, derived from the customer address held on the server.
+	 *
+	 * @return array {
+	 *     @type string $0 Country code to validate the VAT number against.
+	 *     @type bool   $1 Whether the shipping country was used.
+	 * }
+	 */
+	private function get_vat_country_from_customer() {
+		$billing_country      = WC()->customer->get_billing_country();
+		$shipping_country     = WC()->customer->get_shipping_country();
+		$needs_shipping       = WC()->cart ? WC()->cart->needs_shipping_address() : false;
+		$use_shipping_context = $needs_shipping && wc_eu_vat_use_shipping_country();
+
+		if ( empty( $shipping_country ) ) {
+			$shipping_country = $billing_country;
+		}
+
+		return array( $use_shipping_context ? $shipping_country : $billing_country, $use_shipping_context );
+	}
+
+	/**
+	 * Stores the VAT validation country in the session, derived from the customer address held on the server.
+	 *
+	 * @return void
+	 */
+	private function set_vat_country_from_customer() {
+		list( $country, $use_shipping_context ) = $this->get_vat_country_from_customer();
+
+		WC()->session->set( 'wc_eu_vat_current_country', $country );
+		WC()->session->set( 'wc_eu_vat_used_shipping_country', $use_shipping_context );
+	}
+
+	/**
 	 * Checks if VAT number is formatted correctly.
+	 *
+	 * Signature deliberately unchanged: this is a public method on a class other plugins may
+	 * extend. Cache-only validation has its own entry point, validate_from_cache().
 	 *
 	 * @param string|null $vat_number VAT number.
 	 * @return array Information about the result of the validation.
 	 */
 	public function validate( $vat_number = null ) {
+		return $this->run_validation( $vat_number, $this->cache_only_validation );
+	}
+
+	/**
+	 * Validates from what is already known, without contacting the registry.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @param string|null $vat_number VAT number.
+	 * @return array Information about the result of the validation.
+	 */
+	public function validate_from_cache( $vat_number = null ) {
+		$previous_mode               = $this->cache_only_validation;
+		$this->cache_only_validation = true;
+
+		try {
+			// Keep validate() as the override point used before cache-only responses existed.
+			return $this->validate( $vat_number );
+		} finally {
+			$this->cache_only_validation = $previous_mode;
+		}
+	}
+
+	/**
+	 * Shared implementation behind validate() and validate_from_cache().
+	 *
+	 * @since 3.2.2
+	 *
+	 * @param string|null $vat_number  VAT number.
+	 * @param bool        $cached_only Answer from the cache only, never from the registry.
+	 * @return array Information about the result of the validation.
+	 */
+	protected function run_validation( $vat_number = null, $cached_only = false ) {
 		$vat_number = ! is_null( $vat_number ) ? $vat_number : WC()->session->get( 'vat_number' );
 
 		if ( ! $vat_number ) {
@@ -353,7 +475,21 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			return $data;
 		}
 
-		$is_registered_valid = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country );
+		$is_registered_valid = $cached_only
+			? WC_EU_VAT_Number::vat_number_is_valid_from_cache( $vat_number, $country )
+			: WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country );
+
+		// Nothing cached and the registry was deliberately not asked: report it as not yet
+		// known, so nothing is blocked and no error is shown.
+		if ( is_null( $is_registered_valid ) ) {
+			$data['vat_number'] = $vat_number;
+			$data['validation'] = array(
+				'valid' => null,
+				'error' => false,
+			);
+
+			return $data;
+		}
 
 		// Handle WP_Error (API communication errors) according to fail_handler setting.
 		if ( is_wp_error( $is_registered_valid ) ) {

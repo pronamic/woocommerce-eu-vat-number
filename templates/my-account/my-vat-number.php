@@ -2,8 +2,14 @@
 /**
  * My Vat Number
  *
+ * Rendered by WC_EU_VAT_Number_My_Account through wc_get_template(), which
+ * extracts the arguments below into this scope.
+ *
  * @package woocommerce-eu-vat-number/templates
  * @version 2.2.0
+ *
+ * @var string             $vat_number The customer's saved VAT number.
+ * @var array<string,string> $messages Status message to render, if any.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

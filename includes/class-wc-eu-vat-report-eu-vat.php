@@ -381,6 +381,7 @@ class WC_EU_VAT_Report_EU_VAT extends WC_Admin_Report {
 						// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 						?>
 						<tr>
+							<?php // @phpstan-ignore-next-line -- WC_Countries exposes $countries through __get(), not as a declared property. ?>
 							<th scope="row"><?php echo esc_html( WC()->countries->countries[ $rate->tax_rate_country ] ); ?></th>
 							<th scope="row"><?php echo esc_html( $tax_rate_country ); ?></th>
 							<td><?php echo wp_kses_post( $tax_rate ); ?>%</td>

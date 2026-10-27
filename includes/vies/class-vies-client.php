@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once dirname( __FILE__ ) . '/class-vies-response.php';
+require_once __DIR__ . '/class-vies-response.php';
 
 /**
  * A client for the VIES SOAP web service
@@ -66,6 +66,19 @@ class VIES_Client {
 	public function get_soap_client() {
 
 		/**
+		 * Filters how long a VIES lookup may take, in seconds.
+		 *
+		 * This bounds both connecting and waiting for the answer. The request holds a PHP
+		 * worker for the whole time, so a long timeout means a slow VIES can take the
+		 * store's workers with it.
+		 *
+		 * @since 3.2.2
+		 *
+		 * @param int $timeout Time in seconds.
+		 */
+		$timeout = max( 1, (int) apply_filters( 'woocommerce_eu_vat_number_lookup_timeout', 10 ) );
+
+		/**
 		 * Filters SoapClient Parameters.
 		 *
 		 * @since 2.3.7
@@ -77,7 +90,14 @@ class VIES_Client {
 			array(
 				'classmap'           => $this->classmap,
 				'cache_wsdl'         => WSDL_CACHE_BOTH,
-				'connection_timeout' => 45,
+				'connection_timeout' => $timeout,
+				// connection_timeout only covers connecting. Without this, reading the
+				// response falls back to default_socket_timeout, 60 seconds by default.
+				'stream_context'     => stream_context_create(
+					array(
+						'http' => array( 'timeout' => $timeout ),
+					)
+				),
 				'user_agent'         => 'Mozilla', // the request fails unless a (dummy) user agent is specified.
 			)
 		);
@@ -94,7 +114,5 @@ class VIES_Client {
 		}
 
 		return $this->soapclient;
-
 	}
 }
-

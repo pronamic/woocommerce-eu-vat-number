@@ -306,15 +306,22 @@ class WC_EU_VAT_My_Account {
 
 		if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'woocommerce-edit_vat_number' ) ) {
 			try {
-				$current_user_id   = get_current_user_id();
+				$current_user_id = get_current_user_id();
+
+				// This runs on `init`, so logged-out requests reach it too and there
+				// is no user whose VAT number could be saved.
+				if ( ! $current_user_id ) {
+					return;
+				}
+
 				$vat_number        = isset( $_POST['vat_number'] ) ? wc_clean( wp_unslash( $_POST['vat_number'] ) ) : '';
 				$posted_vat        = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
-				$user              = get_userdata( $current_user_id );
-				$current_vat       = $user->vat_number;
-				$billing_country   = $user->billing_country;
-				$billing_postcode  = $user->billing_postcode;
-				$shipping_country  = $user->shipping_country ? $user->shipping_country : $billing_country;
-				$shipping_postcode = $user->shipping_postcode;
+				$current_vat       = get_user_meta( $current_user_id, 'vat_number', true );
+				$billing_country   = get_user_meta( $current_user_id, 'billing_country', true );
+				$billing_postcode  = get_user_meta( $current_user_id, 'billing_postcode', true );
+				$shipping_country  = get_user_meta( $current_user_id, 'shipping_country', true );
+				$shipping_postcode = get_user_meta( $current_user_id, 'shipping_postcode', true );
+				$shipping_country  = $shipping_country ? $shipping_country : $billing_country;
 
 				$country  = $billing_country;
 				$postcode = $billing_postcode;

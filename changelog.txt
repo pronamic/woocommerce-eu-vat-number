@@ -1,5 +1,17 @@
 *** EU VAT Number Changelog ***
 
+= 3.2.2 - 2026-10-26 =
+* Tweak - Raise minimum requirements to WordPress 7.0, WooCommerce 11.0, PHP 7.4.
+* Tweak - WooCommerce 11.2 Compatibility.
+* Fix - Declare High-Performance Order Storage compatibility even when the SOAP extension is missing or taxes are disabled, so WooCommerce no longer lists the plugin as incompatible on those stores.
+* Fix - Saving a VAT number from the My Account form no longer runs for logged-out requests, where it could fail on a missing user.
+* Fix - Register the admin billing, shipping and reports callbacks with add_filter, matching the filters WooCommerce fires them on.
+* Fix - Improved validation of VAT numbers during block checkout.
+* Fix - The VAT exemption is now rechecked when the customer changes their address during checkout, so a previous address no longer affects the totals.
+* Fix - The billing country is now used for VAT validation when an order does not require shipping, such as local pickup.
+* Fix - Disable Express Pay now takes effect on stores that enabled B2B Transactions before the setting existed, instead of leaving express checkout buttons active while the settings screen showed the option as enabled.
+* Fix - Rate limit outbound VIES and HMRC lookups, bound how long one can take, and stop cart responses re-checking a VAT number.
+
 2026-08-26 - version 3.2.1
 * Fix - My Account VAT Number page now honors the "Failed Validation Handling" setting instead of always rejecting VAT numbers that fail VIES/UK validation.
 * Dev - Bump WordPress "Tested up to" version 7.1.

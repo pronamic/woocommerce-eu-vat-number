@@ -4,19 +4,19 @@
  * Requires Plugins: woocommerce
  * Plugin URI: https://woocommerce.com/products/eu-vat-number/
  * Description: The EU VAT Number extension lets you collect and validate EU VAT numbers during checkout to identify B2B transactions verses B2C. IP Addresses can also be validated to ensure they match the billing address. EU businesses with a valid VAT number can have their VAT removed prior to payment.
- * Version: 3.2.1
+ * Version: 3.2.2
  * Author: WooCommerce
  * Author URI: https://woocommerce.com/
  * Text Domain: woocommerce-eu-vat-number
  * Domain Path: /languages
- * Requires at least: 6.9
+ * Requires at least: 7.0
  * Tested up to: 7.1
- * WC requires at least: 10.9
- * WC tested up to: 11.1
+ * WC requires at least: 11.0
+ * WC tested up to: 11.2
  * Requires PHP: 7.4
  * PHP tested up to: 8.3
  *
- * Copyright: © 2024 WooCommerce
+ * Copyright: © 2026 WooCommerce
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // phpcs:disable WordPress.Files.FileName
 
-define( 'WC_EU_VAT_VERSION', '3.2.1' ); // WRCS: DEFINED_VERSION.
+define( 'WC_EU_VAT_VERSION', '3.2.2' ); // WRCS: DEFINED_VERSION.
 define( 'WC_EU_VAT_FILE', __FILE__ );
 define( 'WC_EU_ABSPATH', __DIR__ . '/' );
 define( 'WC_EU_VAT_PLUGIN_URL', untrailingslashit( plugins_url( '/', __FILE__ ) ) );
@@ -58,6 +58,12 @@ class WC_EU_VAT_Number_Init {
 	 */
 	public function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'init' ), 9 );
+
+		// Registered here rather than in init(), which returns early when
+		// check_dependencies() fails. A feature compatibility declaration
+		// describes how this plugin's code behaves, so it must not depend on
+		// whether SOAP is installed or taxes happen to be enabled on the store.
+		add_action( 'before_woocommerce_init', array( $this, 'declare_woocommerce_feature_compatibility' ) );
 		add_action( 'woocommerce_blocks_loaded', array( $this, 'wc_eu_vat_number_block_init' ) );
 
 		add_action( 'init', array( $this, 'localization' ) );
@@ -285,7 +291,6 @@ class WC_EU_VAT_Number_Init {
 			}
 
 			$this->filter_woocpayments_compatibility();
-			add_action( 'before_woocommerce_init', array( $this, 'declare_woocommerce_feature_compatibility' ) );
 			add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 			add_filter( 'plugin_row_meta', array( $this, 'plugin_row_meta' ), 10, 2 );
 			add_filter( 'woocommerce_get_order_item_totals', 'wc_eu_vat_maybe_add_zero_tax_display', 10, 3 );
@@ -375,6 +380,77 @@ class WC_EU_VAT_Number_Init {
 	}
 
 	/**
+	 * Whether a payment gateway whose express buttons this plugin knows how to suppress is active.
+	 *
+	 * Used both to decide whether the "Disable Express Pay" setting is worth showing and
+	 * to decide whether the administrator needs warning about express payments.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @return bool
+	 */
+	public static function has_supported_express_payment_gateway() {
+		$detected = function_exists( 'wcpay_init' )
+			|| function_exists( 'woocommerce_gateway_stripe' )
+			|| class_exists( 'WooCommerce_Square_Loader' )
+			|| class_exists( 'WC_PayPal_Braintree_Loader' );
+
+		/**
+		 * Filters whether an express payment gateway this plugin can suppress is active.
+		 *
+		 * Gateways this plugin does not know about can return true here so that the
+		 * "Disable Express Pay" setting and the administrator warning are shown.
+		 *
+		 * @since 3.2.2
+		 *
+		 * @param bool $detected Whether a supported express payment gateway was detected.
+		 */
+		$filtered = apply_filters( 'wc_eu_vat_has_supported_express_payment_gateway', $detected );
+
+		return is_bool( $filtered ) ? $filtered : $detected;
+	}
+
+	/**
+	 * Whether express payment methods that cannot collect a VAT number should be suppressed.
+	 *
+	 * Suppression only applies when B2B transactions are enforced, since that is the
+	 * only configuration in which an order placed through such a method is guaranteed
+	 * to be rejected for a missing VAT number after the wallet has already authorised
+	 * the card.
+	 *
+	 * The stored option is read with a `yes` fallback so that it matches the default
+	 * declared for the setting in `includes/data/eu-vat-number-settings.php`. Stores
+	 * that upgraded from a version before 2.9.2 have never written the option, and
+	 * reading it as `no` left them with the broken behaviour this setting was added
+	 * to prevent while the settings screen showed the box as ticked.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @return bool
+	 */
+	public static function should_prevent_incompatible_payment_methods() {
+		if ( 'yes' !== get_option( 'woocommerce_eu_vat_number_b2b', 'no' ) ) {
+			return false;
+		}
+
+		$prevent = 'yes' === get_option( 'woocommerce_eu_vat_number_prevent_incompatible_payment_methods', 'yes' );
+
+		/**
+		 * Filters whether express payment methods that cannot collect a VAT number are suppressed.
+		 *
+		 * Gateways outside the handful this plugin knows about can use this to decide
+		 * whether to hide their own express buttons.
+		 *
+		 * @since 3.2.2
+		 *
+		 * @param bool $prevent Whether the express payment methods should be suppressed.
+		 */
+		$filtered = apply_filters( 'wc_eu_vat_prevent_incompatible_payment_methods', $prevent );
+
+		return is_bool( $filtered ) ? $filtered : $prevent;
+	}
+
+	/**
 	 * Remove incompatible express payment options from WooCommerce Payments.
 	 *
 	 * Neither the Apple Pay or Google Pay APIs support the collection of
@@ -394,13 +470,7 @@ class WC_EU_VAT_Number_Init {
 			return;
 		}
 
-		// No changes if B2B is not enabled.
-		if ( 'no' === get_option( 'woocommerce_eu_vat_number_b2b', 'no' ) ) {
-			return;
-		}
-
-		// No changes if the store owner has deactivated this feature.
-		if ( 'no' === get_option( 'woocommerce_eu_vat_number_prevent_incompatible_payment_methods', 'no' ) ) {
+		if ( ! self::should_prevent_incompatible_payment_methods() ) {
 			return;
 		}
 
@@ -411,12 +481,24 @@ class WC_EU_VAT_Number_Init {
 				/**
 				 * Filter the WooCommerce Payments settings to disable incompatible payment methods.
 				 *
-				 * @param array $payment_options The WooCommerce Payments settings.
-				 * @return array Modified WooCommerce Payments settings.
+				 * @param mixed $payment_options The WooCommerce Payments settings.
+				 * @return mixed Modified WooCommerce Payments settings.
 				 */
 				function ( $payment_options ) {
+					if ( ! is_array( $payment_options ) ) {
+						return $payment_options;
+					}
+
+					// Retain support for the legacy WooPayments settings.
 					$payment_options['payment_request']   = 'no';
 					$payment_options['platform_checkout'] = 'no';
+
+					// WooPayments 10.4+ stores express methods per location.
+					$payment_options['express_checkout_in_payment_methods'] = 'no';
+
+					foreach ( array( 'product', 'cart', 'checkout' ) as $location ) {
+						$payment_options[ "express_checkout_{$location}_methods" ] = array();
+					}
 
 					return $payment_options;
 				}

@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/vies/class-vies-client.php';
+require_once __DIR__ . '/class-wc-eu-vat-rate-limiter.php';
 require_once __DIR__ . '/class-wc-eu-vat-uk-number-api.php';
 require_once __DIR__ . '/class-wc-eu-vat-admin.php';
 
@@ -17,6 +18,27 @@ require_once __DIR__ . '/class-wc-eu-vat-admin.php';
  * WC_EU_VAT_Number class.
  */
 class WC_EU_VAT_Number {
+
+	/**
+	 * Longest VAT number any supported country issues, including its prefix.
+	 *
+	 * @since 3.2.2
+	 */
+	const MAX_VAT_NUMBER_LENGTH = 20;
+
+	/**
+	 * Lookup results already worked out during this request.
+	 *
+	 * A single checkout request validates the same number more than once, and the cart
+	 * response is built after the update that produced the answer. Without this, an answer
+	 * that is not written to the result cache, such as a throttled or failed lookup, would
+	 * be lost between the two.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @var array
+	 */
+	private static $lookup_results = array();
 
 	/**
 	 * Stores an array of EU country codes.
@@ -110,7 +132,7 @@ class WC_EU_VAT_Number {
 		add_filter( 'woocommerce_order_formatted_billing_address', array( __CLASS__, 'formatted_billing_address' ), 10, 2 );
 		add_filter( 'woocommerce_order_formatted_shipping_address', array( __CLASS__, 'formatted_shipping_address' ), 10, 2 );
 		add_filter( 'woocommerce_formatted_address_replacements', array( __CLASS__, 'output_company_vat_number' ), 10, 2 );
-		add_filter( 'woocommerce_localisation_address_formats', array( __CLASS__, 'localisation_address_formats' ), 10, 2 );
+		add_filter( 'woocommerce_localisation_address_formats', array( __CLASS__, 'localisation_address_formats' ), 10, 1 );
 
 		// Digital goods taxable location.
 		add_filter( 'woocommerce_get_tax_location', array( __CLASS__, 'woocommerce_get_tax_location' ), 10, 2 );
@@ -325,9 +347,9 @@ class WC_EU_VAT_Number {
 		 *
 		 * @hook woocommerce_eu_vat_number_get_vat_number_prefix
 		 *
-		 * @param {string}  $vat_prefix VAT prefix.
+		 * @param string $vat_prefix VAT prefix.
 		 *
-		 * @return {string} Filtered VAT prefix.
+		 * @return string Filtered VAT prefix.
 		 */
 		return apply_filters( 'woocommerce_eu_vat_number_get_vat_number_prefix', $vat_prefix );
 	}
@@ -419,13 +441,79 @@ class WC_EU_VAT_Number {
 	/**
 	 * Validate a number.
 	 *
+	 * Signature deliberately unchanged: this is a public method on a class other plugins may
+	 * extend, and adding a parameter would break any override. Cache-only lookups have their
+	 * own entry point, vat_number_is_valid_from_cache().
+	 *
 	 * @param  string $vat_number VAT Number.
 	 * @param  string $country    CountryCode.
 	 * @param  string $postcode   Postcode.
 	 *
 	 * @return bool|WP_Error if valid/not valid, WP_ERROR if validation failed
 	 */
-	public static function vat_number_is_valid( $vat_number, $country, $postcode = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public static function vat_number_is_valid( $vat_number, $country, $postcode = '' ) {
+		return self::lookup( $vat_number, $country, $postcode, false );
+	}
+
+	/**
+	 * Answer a number from what is already known, without contacting the registry.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @param  string $vat_number VAT Number.
+	 * @param  string $country    CountryCode.
+	 *
+	 * @return bool|WP_Error|null Null when nothing is known about the number yet.
+	 */
+	public static function vat_number_is_valid_from_cache( $vat_number, $country ) {
+		return self::lookup( $vat_number, $country, '', true );
+	}
+
+	/**
+	 * Shared entry point behind the two public lookup methods.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @param  string $vat_number  VAT Number.
+	 * @param  string $country     CountryCode.
+	 * @param  string $postcode    Postcode.
+	 * @param  bool   $cached_only Answer from the cache only, never from the registry.
+	 *
+	 * @return bool|WP_Error|null
+	 */
+	protected static function lookup( $vat_number, $country, $postcode, $cached_only ) {
+		// Both halves come from the request, so both are bounded before they become an array
+		// key. A number longer than the cap is refused below whatever it says past the cap,
+		// and a country is two characters, so nothing is lost by cutting them here.
+		$memo_key = substr( strtoupper( str_replace( array( ' ', '.', '-', ',' ), '', (string) $vat_number ) ), 0, self::MAX_VAT_NUMBER_LENGTH + 1 )
+			. '|' . substr( (string) $country, 0, 10 );
+
+		if ( isset( self::$lookup_results[ $memo_key ] ) ) {
+			return self::$lookup_results[ $memo_key ];
+		}
+
+		$result = self::run_vat_number_lookup( $vat_number, $country, $postcode, $cached_only );
+
+		if ( ! is_null( $result ) ) {
+			self::$lookup_results[ $memo_key ] = $result;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Performs the lookup behind vat_number_is_valid().
+	 *
+	 * @since 3.2.2
+	 *
+	 * @param  string $vat_number  VAT Number.
+	 * @param  string $country     CountryCode.
+	 * @param  string $postcode    Postcode.
+	 * @param  bool   $cached_only Answer from the cache only, never from the registry.
+	 *
+	 * @return bool|WP_Error|null
+	 */
+	protected static function run_vat_number_lookup( $vat_number, $country, $postcode = '', $cached_only = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		// The StoreAPI will set $vat_number to null if the user does not enter it. We should show an error in this case.
 		if ( null === $vat_number ) {
 			return false;
@@ -434,6 +522,16 @@ class WC_EU_VAT_Number {
 		// Replace unwanted chars on VAT Number.
 		$vat_number = $vat_number ? $vat_number : '';
 		$vat_number = strtoupper( str_replace( array( ' ', '.', '-', ',', ', ' ), '', $vat_number ) );
+
+		// The longest number any supported country issues is 12 characters plus a two
+		// character prefix. Stop before building a cache key out of whatever was submitted.
+		if ( strlen( $vat_number ) > self::MAX_VAT_NUMBER_LENGTH ) {
+			if ( self::filter_validity_result( false, $vat_number, $country ) ) {
+				return true;
+			}
+
+			return new WP_Error( 'wc-eu-vat-format-error', __( 'The VAT number format is incorrect.', 'woocommerce-eu-vat-number' ) );
+		}
 
 		$vat_prefix           = self::get_vat_number_prefix( $country );
 		$vat_number_formatted = self::get_formatted_vat_number( $vat_number );
@@ -467,6 +565,35 @@ class WC_EU_VAT_Number {
 			return 'yes' === $cached_result;
 		}
 
+		// A number that just failed is not asked about again for a short while, so a
+		// registry that is down is not re-tried on every cart update. This is a cache read,
+		// so it answers cache-only callers too: without it a later cart response would
+		// report "not known yet" and the customer would lose the error they were shown.
+		$failure_transient = 'vat_number_failed_' . $vat_prefix . $vat_number_formatted;
+
+		if ( get_transient( $failure_transient ) ) {
+			return new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
+		}
+
+		// Building a cart response must not cost a lookup. Say "not known yet" instead.
+		if ( $cached_only ) {
+			return null;
+		}
+
+		// Everything below can reach the network. A number that cannot match the country's
+		// pattern is not registered anywhere, so answer it on the regex: a bad number costs
+		// a preg_match instead of a round trip. Reported as invalid rather than as an error,
+		// because that is what the registry would have said, and callers such as renewal
+		// processing treat an error as "could not check" and leave the order untouched.
+		if ( is_wp_error( self::validate_vat_format( $vat_number, $country ) ) ) {
+			return self::filter_validity_result( false, $vat_number, $country );
+		}
+
+		// Cap how many lookups one requester can send to the registries.
+		if ( ! WC_EU_VAT_Rate_Limiter::claim_lookup() ) {
+			return WC_EU_VAT_Rate_Limiter::get_error();
+		}
+
 		$is_valid = false;
 		if ( in_array( $country, array( 'GB', 'IM' ), true ) ) {
 			// For United Kingdom (UK) (Isle of Man included) check VAT number with UK VAT Number API.
@@ -474,7 +601,7 @@ class WC_EU_VAT_Number {
 				$uk_vat_api = new WC_EU_VAT_UK_Number_API();
 				$is_valid   = $uk_vat_api->check_vat_number( $vat_number_formatted );
 			} catch ( Exception $e ) {
-				return new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
+				return self::remember_failed_lookup( $failure_transient, new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) ) );
 			}
 		} else {
 			// Check rest of EU countries with VIES.
@@ -483,7 +610,7 @@ class WC_EU_VAT_Number {
 
 			// Return error if any error occurs in getting the SOAP client.
 			if ( is_wp_error( $soap_client ) ) {
-				return $soap_client;
+				return self::remember_failed_lookup( $failure_transient, $soap_client );
 			}
 
 			if ( $soap_client ) {
@@ -495,49 +622,77 @@ class WC_EU_VAT_Number {
 
 					// Check for specific VIES error codes that indicate member state unavailability.
 					if ( stripos( $fault_string, 'MS_UNAVAILABLE' ) !== false ) {
-						return new WP_Error(
-							'wc-eu-vat-api-error',
-							__( 'The VAT validation service for this country is temporarily unavailable. Please try again later.', 'woocommerce-eu-vat-number' )
+						return self::remember_failed_lookup(
+							$failure_transient,
+							new WP_Error(
+								'wc-eu-vat-api-error',
+								__( 'The VAT validation service for this country is temporarily unavailable. Please try again later.', 'woocommerce-eu-vat-number' )
+							)
 						);
 					}
 
 					if ( stripos( $fault_string, 'SERVICE_UNAVAILABLE' ) !== false || stripos( $fault_string, 'MS_MAX_CONCURRENT_REQ' ) !== false ) {
-						return new WP_Error(
-							'wc-eu-vat-api-error',
-							__( 'The VAT validation service is temporarily unavailable due to high load. Please try again later.', 'woocommerce-eu-vat-number' )
+						return self::remember_failed_lookup(
+							$failure_transient,
+							new WP_Error(
+								'wc-eu-vat-api-error',
+								__( 'The VAT validation service is temporarily unavailable due to high load. Please try again later.', 'woocommerce-eu-vat-number' )
+							)
 						);
 					}
 
 					if ( stripos( $fault_string, 'TIMEOUT' ) !== false ) {
-						return new WP_Error(
-							'wc-eu-vat-api-error',
-							__( 'The VAT validation service timed out. Please try again later.', 'woocommerce-eu-vat-number' )
+						return self::remember_failed_lookup(
+							$failure_transient,
+							new WP_Error(
+								'wc-eu-vat-api-error',
+								__( 'The VAT validation service timed out. Please try again later.', 'woocommerce-eu-vat-number' )
+							)
 						);
 					}
 
-					return new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
+					return self::remember_failed_lookup( $failure_transient, new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) ) );
 				} catch ( Exception $e ) {
-					return new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) );
+					return self::remember_failed_lookup( $failure_transient, new WP_Error( 'wc-eu-vat-api-error', __( 'Error communicating with the VAT validation server - please try again.', 'woocommerce-eu-vat-number' ) ) );
 				}
 			}
 		}
 
+		$is_valid = self::filter_validity_result( $is_valid, $vat_number, $country );
+
+		set_transient( $transient_name, $is_valid ? 'yes' : 'no', DAY_IN_SECONDS );
+		return $is_valid;
+	}
+
+	/**
+	 * Applies the published final-validity filter and validates its return value.
+	 *
+	 * This remains the final decision point even when a malformed number is rejected before
+	 * the registry call, preserving the hook timing relied on by custom validation services.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @param bool   $is_valid  Whether the VAT number is valid before filtering.
+	 * @param string $vat_number VAT number.
+	 * @param string $country    Country.
+	 * @return bool
+	 */
+	private static function filter_validity_result( $is_valid, $vat_number, $country ) {
 		/**
 		 * Filter whether the VAT number is valid or not.
 		 *
 		 * @since 2.4.2
 		 * @hook woocommerce_eu_vat_number_is_valid
 		 *
-		 * @param {boolean} $is_valid    Whether the VAT number is valid or not.
-		 * @param {string}  $vat_number  VAT number.
-		 * @param {string}  $country     Country.
+		 * @param bool   $is_valid   Whether the VAT number is valid or not.
+		 * @param string $vat_number VAT number.
+		 * @param string $country    Country.
 		 *
-		 * @return {boolean}
+		 * @return bool
 		 */
-		$is_valid = apply_filters( 'woocommerce_eu_vat_number_is_valid', $is_valid, $vat_number, $country );
+		$filtered_result = apply_filters( 'woocommerce_eu_vat_number_is_valid', $is_valid, $vat_number, $country );
 
-		set_transient( $transient_name, $is_valid ? 'yes' : 'no', DAY_IN_SECONDS );
-		return $is_valid;
+		return is_bool( $filtered_result ) ? $filtered_result : $is_valid;
 	}
 
 	/**
@@ -584,6 +739,32 @@ class WC_EU_VAT_Number {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Remembers that a lookup failed, so it is not repeated for a short while.
+	 *
+	 * @since 3.2.2
+	 *
+	 * @param string   $transient Transient name for this number.
+	 * @param WP_Error $error     The failure to return.
+	 * @return WP_Error The error that was passed in.
+	 */
+	protected static function remember_failed_lookup( $transient, $error ) {
+		/**
+		 * Filters how long a failed VAT lookup is remembered before the registry is tried again.
+		 *
+		 * @since 3.2.2
+		 *
+		 * @param int $ttl Time in seconds. Zero or less disables it.
+		 */
+		$ttl = (int) apply_filters( 'woocommerce_eu_vat_number_failed_lookup_ttl', MINUTE_IN_SECONDS );
+
+		if ( $ttl > 0 ) {
+			set_transient( $transient, 'yes', $ttl );
+		}
+
+		return $error;
 	}
 
 	/**
@@ -694,9 +875,9 @@ class WC_EU_VAT_Number {
 		 *
 		 * @since 2.9.14
 		 *
-		 * @param bool   $exempt             Is VAT exempt?.
-		 * @param bool   $store_country_code Store's location country code.
-		 * @param string $vat_country_code   Country code from the VAT number.
+		 * @param bool|string|null $exempt             Is VAT exempt? Null when the caller did not decide.
+		 * @param string           $store_country_code Store's location country code.
+		 * @param string           $vat_country_code   Country code from the VAT number.
 		 */
 		$exempt             = apply_filters( 'woocommerce_eu_vat_maybe_apply_vat_exemption', $exempt, $store_country_code, $vat_country_code );
 		$is_valid_condition = $exempt;
@@ -1477,8 +1658,8 @@ class WC_EU_VAT_Number {
 	 * renewal order) into session so checkout autofill matches; {@see get_checkout_vat_number_prefill()} prioritizes
 	 * session so customer edits on checkout stay authoritative.
 	 *
-	 * @param WC_Subscription $subscription Subscription used to build the cart.
-	 * @param WC_Order|null   $order        Renewal order when {@see wcs_after_renewal_setup_cart_subscription} fires.
+	 * @param object        $subscription A WC_Subscription instance used to build the cart.
+	 * @param WC_Order|null $order        Renewal order when {@see wcs_after_renewal_setup_cart_subscription} fires.
 	 * @return void
 	 */
 	public static function seed_session_vat_after_renewal_cart_setup( $subscription, $order = null ) {
@@ -1623,13 +1804,13 @@ class WC_EU_VAT_Number {
 	 * Performs VAT validation during Subscription renewal and charges/exempt VAT
 	 * based on the current tax settings.
 	 *
-	 * @param WC_Order        $renewal      The renewal order.
-	 * @param WC_Subscription $subscription Subscription.
+	 * @param WC_Order $renewal      The renewal order.
+	 * @param object   $subscription A WC_Subscription instance.
 	 * @return WC_Order The renewal order.
 	 */
 	public static function vat_on_creating_renewal_order( WC_Order $renewal, $subscription ) {
-		// Make sure the renewal and subscription are not empty.
-		if ( empty( $renewal ) || empty( $subscription ) ) {
+		// Use the class name as a string because WooCommerce Subscriptions is optional.
+		if ( ! is_a( $subscription, 'WC_Subscription' ) ) {
 			return $renewal;
 		}
 
@@ -1638,9 +1819,9 @@ class WC_EU_VAT_Number {
 		 *
 		 * @since 3.0.3
 		 *
-		 * @param bool            $validate_vat Whether to validate VAT on subscriptions renewal.
-		 * @param WC_Order        $renewal      The renewal order.
-		 * @param WC_Subscription $subscription The subscription.
+		 * @param bool     $validate_vat Whether to validate VAT on subscriptions renewal.
+		 * @param WC_Order $renewal      The renewal order.
+		 * @param object   $subscription A WC_Subscription instance.
 		 * @return bool Whether to validate VAT on subscriptions renewal.
 		 */
 		if ( ! apply_filters( 'woocommerce_eu_vat_number_validate_vat_on_subscription_renewal', true, $renewal, $subscription ) ) {
@@ -1653,6 +1834,7 @@ class WC_EU_VAT_Number {
 		}
 
 		// Bail if the subscription is manual, not editable or doesn't support amount changes.
+		// @phpstan-ignore-next-line -- is_manual() and payment_method_supports() are declared by WC_Subscription, which only exists when WooCommerce Subscriptions is active.
 		if ( $subscription->is_manual() || ! $subscription->is_editable() || ! $subscription->payment_method_supports( 'subscription_amount_changes' ) ) {
 			return $renewal;
 		}

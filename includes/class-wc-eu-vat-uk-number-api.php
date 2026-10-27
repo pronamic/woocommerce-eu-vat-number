@@ -41,11 +41,22 @@ class WC_EU_VAT_UK_Number_API {
 		if ( empty( $vat_number ) ) {
 			return false;
 		}
+		/**
+		 * Filters how long a VAT lookup may take, in seconds.
+		 *
+		 * This filter is also applied to VIES lookups in VIES_Client::get_soap_client().
+		 *
+		 * @since 3.2.2
+		 *
+		 * @param int $timeout Time in seconds.
+		 */
+		$timeout = max( 1, (int) apply_filters( 'woocommerce_eu_vat_number_lookup_timeout', 10 ) );
+
 		$api_url  = $this->api_url . $vat_number;
 		$response = wp_remote_get(
 			esc_url_raw( $api_url ),
 			array(
-				'timeout'    => 30,
+				'timeout'    => $timeout,
 				'headers'    => array(
 					'Accept' => "application/vnd.hmrc.{$this->api_version}+json",
 				),

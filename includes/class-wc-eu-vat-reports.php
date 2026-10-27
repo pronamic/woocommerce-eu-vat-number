@@ -36,7 +36,7 @@ class WC_EU_VAT_Reports {
 		}
 
 		add_action( 'admin_notices', array( __CLASS__, 'display_hpos_incompatibility_notice' ) );
-		add_action( 'woocommerce_admin_reports', array( __CLASS__, 'init_reports' ) );
+		add_filter( 'woocommerce_admin_reports', array( __CLASS__, 'init_reports' ) );
 	}
 
 	/**
