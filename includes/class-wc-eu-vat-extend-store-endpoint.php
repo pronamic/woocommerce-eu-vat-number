@@ -50,6 +50,7 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		// Re-check the VAT exemption whenever the customer address changes, before totals are calculated.
 		add_action( 'woocommerce_store_api_cart_update_customer_from_request', array( $this, 'refresh_vat_exemption' ) );
 		add_action( 'woocommerce_store_api_checkout_update_customer_from_request', array( $this, 'refresh_vat_exemption' ) );
+		add_action( 'woocommerce_store_api_checkout_update_draft', array( $this, 'refresh_vat_exemption_for_draft' ) );
 	}
 
 	/**
@@ -321,14 +322,43 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 
 		list( $country, $use_shipping_context ) = $this->get_vat_country_from_customer();
 
-		// The block checkout sends update-customer on every address edit; only re-validate (and call VIES) when the country changes.
+		// The block checkout sends update-customer on every address edit. Keep a
+		// confirmed exemption when the validation context is unchanged, but retry
+		// non-exempt customers so a temporary registry failure can recover on a
+		// later checkout recalculation. Success and failure caches prevent repeated
+		// registry requests while an answer is still fresh.
 		if ( WC()->session->get( 'wc_eu_vat_current_country' ) === $country
-			&& (bool) WC()->session->get( 'wc_eu_vat_used_shipping_country' ) === $use_shipping_context ) {
+			&& (bool) WC()->session->get( 'wc_eu_vat_used_shipping_country' ) === $use_shipping_context
+			&& WC()->customer->get_is_vat_exempt() ) {
 			return;
 		}
 
 		$this->set_vat_country_from_customer();
 		$this->maybe_set_vat_exemption( $this->validate( $vat_number ) );
+	}
+
+	/**
+	 * Re-applies a recovered VAT exemption during payment-only checkout updates.
+	 *
+	 * WooCommerce calculates totals before firing the draft-update action. Recalculate
+	 * only when validation recovery changes the exemption so the response contains the
+	 * corrected totals.
+	 *
+	 * @since 3.2.3
+	 * @return void
+	 */
+	public function refresh_vat_exemption_for_draft() {
+		if ( ! WC()->cart || ! WC()->customer ) {
+			return;
+		}
+
+		$was_exempt = WC()->customer->get_is_vat_exempt();
+
+		$this->refresh_vat_exemption();
+
+		if ( WC()->customer->get_is_vat_exempt() !== $was_exempt ) {
+			WC()->cart->calculate_totals();
+		}
 	}
 
 	/**

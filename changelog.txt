@@ -1,5 +1,8 @@
 *** EU VAT Number Changelog ***
 
+= 3.2.3 - 2026-11-11 =
+* Fix - Reapply a recovered VAT exemption when Block Checkout recalculates totals after a payment method change.
+
 = 3.2.2 - 2026-10-26 =
 * Tweak - Raise minimum requirements to WordPress 7.0, WooCommerce 11.0, PHP 7.4.
 * Tweak - WooCommerce 11.2 Compatibility.
