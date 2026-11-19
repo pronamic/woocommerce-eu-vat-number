@@ -1,5 +1,12 @@
 *** EU VAT Number Changelog ***
 
+= 3.2.4 - 2026-11-17 =
+* Fix - Block Checkout no longer freezes when the same VAT number is retyped quickly.
+* Tweak - WooCommerce 11.3 Compatibility.
+* Tweak - Raise minimum requirements to WordPress 7.0, WooCommerce 11.1, PHP 7.4.
+* Fix - Keep EU VAT reports discoverable in WooCommerce 11.3 on new stores.
+* Fix - Require digital-goods location confirmation on the server during Store API checkout.
+
 = 3.2.3 - 2026-11-11 =
 * Fix - Reapply a recovered VAT exemption when Block Checkout recalculates totals after a payment method change.
 

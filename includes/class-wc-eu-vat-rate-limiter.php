@@ -20,7 +20,7 @@
  * Database-backed transient updates are serialized with a short options-table lock.
  *
  * @package woocommerce-eu-vat-number
- * @since   x.x.x
+ * @since   3.2.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

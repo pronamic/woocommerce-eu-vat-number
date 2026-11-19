@@ -71,17 +71,18 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$billing_address = array();
 		}
 
-		$country  = isset( $billing_address['country'] ) ? wc_clean( $billing_address['country'] ) : '';
-		$postcode = isset( $billing_address['postcode'] ) ? wc_clean( $billing_address['postcode'] ) : '';
+		$billing_country = isset( $billing_address['country'] ) ? wc_clean( $billing_address['country'] ) : '';
+		$postcode        = isset( $billing_address['postcode'] ) ? wc_clean( $billing_address['postcode'] ) : '';
 
-		if ( '' === $country ) {
-			$country = wc_clean( $order->get_billing_country() );
+		if ( '' === $billing_country ) {
+			$billing_country = wc_clean( $order->get_billing_country() );
 		}
 		if ( '' === $postcode ) {
 			$postcode = wc_clean( $order->get_billing_postcode() );
 		}
 
 		// Match get_vat_country_from_customer(): with local pickup the cart needs no shipping address, so use billing.
+		$country               = $billing_country;
 		$needs_shipping        = WC()->cart ? WC()->cart->needs_shipping_address() : $order->needs_shipping_address();
 		$used_shipping_country = false;
 		$customer_obj          = WC()->customer;
@@ -89,11 +90,6 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$used_shipping_country = (bool) $customer_obj->get_shipping_country();
 			$country               = $customer_obj->get_shipping_country() ? wc_clean( $customer_obj->get_shipping_country() ) : $country;
 			$postcode              = $customer_obj->get_shipping_postcode() ? wc_clean( $customer_obj->get_shipping_postcode() ) : '';
-		}
-
-		// Skip if country is not in the EU.
-		if ( ! in_array( $country, WC_EU_VAT_Number::get_eu_countries(), true ) ) {
-			return;
 		}
 
 		$extensions = $request->get_param( 'extensions' );
@@ -113,20 +109,35 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$vat_number = WC()->session->get( 'vat_number' );
 		}
 
-		$vat_number = is_string( $vat_number ) ? wc_clean( $vat_number ) : '';
+		$vat_number            = is_string( $vat_number ) ? wc_clean( $vat_number ) : '';
+		$is_eu_vat_country     = in_array( $country, WC_EU_VAT_Number::get_eu_countries(), true );
+		$fail_handler          = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
+		$location_confirmation = isset( $eu_vat_ext['location_confirmation'] ) && true === $eu_vat_ext['location_confirmation'];
 
 		// Validate against the order's country, whether the number came from the request or the session.
-		if ( $vat_number ) {
+		if ( $is_eu_vat_country && $vat_number ) {
 			// Normalize the VAT number prefix before validation (handles cases like Greece where GR != EL).
 			$vat_number = WC_EU_VAT_Number::get_normalized_vat_number( $vat_number, $country );
 
-			$is_valid     = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
-			$fail_handler = get_option( 'woocommerce_eu_vat_number_failure_handling', 'reject' );
+			$preliminary_validation = WC_EU_VAT_Number::vat_number_is_valid( $vat_number, $country, $postcode );
 
-			if ( 'reject' === $fail_handler && ( is_wp_error( $is_valid ) || false === $is_valid ) ) {
+			if ( 'reject' === $fail_handler && ( is_wp_error( $preliminary_validation ) || false === $preliminary_validation ) ) {
 				wc_eu_vat_clear_tagged_error_notices_from_session();
 				wc_add_notice( __( 'Invalid VAT number.', 'woocommerce-eu-vat-number' ), 'error', wc_eu_vat_notice_data() );
 			}
+		}
+
+		// We set the customer's self-declared country and the country we think they are from based on their IP.
+		$ip_country = WC_EU_VAT_Number::get_ip_country();
+		if ( false !== $ip_country ) {
+			$order->update_meta_data( '_customer_ip_country', $ip_country );
+			$order->update_meta_data( '_customer_self_declared_country', $location_confirmation ? 'true' : 'false' );
+		}
+
+		// A non-EU VAT country needs no VAT-number work, but digital goods can still require location evidence.
+		if ( ! $is_eu_vat_country ) {
+			$this->maybe_require_location_confirmation( $billing_country, $ip_country, $location_confirmation, false );
+			return;
 		}
 
 		$customer_id = $order->get_customer_id();
@@ -137,14 +148,8 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 			$customer->save_meta_data();
 		}
 
-		// We set the customer's self-declared country and the country we think they are from based on their IP.
-		if ( false !== WC_EU_VAT_Number::get_ip_country() ) {
-			$order->update_meta_data( '_customer_ip_country', WC_EU_VAT_Number::get_ip_country() );
-			$location_confirmation = ! empty( $eu_vat_ext['location_confirmation'] );
-			$order->update_meta_data( '_customer_self_declared_country', $location_confirmation ? 'true' : 'false' );
-		}
-
 		if ( ! $vat_number ) {
+			$this->maybe_require_location_confirmation( $billing_country, $ip_country, $location_confirmation, false );
 			return;
 		}
 
@@ -165,6 +170,56 @@ class WC_EU_VAT_Extend_Store_Endpoint {
 		wc_eu_vat_maybe_add_order_note( $order, $vat_number, $is_valid );
 
 		$this->maybe_apply_exemption();
+
+		// Keep the existing VAT rejection as the only error when it already blocks checkout.
+		$has_blocking_vat_error = 'reject' === $fail_handler && true !== $is_valid;
+		if ( ! $has_blocking_vat_error ) {
+			$this->maybe_require_location_confirmation( $billing_country, $ip_country, $location_confirmation, true === $is_valid );
+		}
+	}
+
+	/**
+	 * Enforces the digital-goods location declaration for Store API checkouts.
+	 *
+	 * @param string       $billing_country       Billing country from the order request.
+	 * @param string|false $ip_country            Country detected from the request IP, or false when unavailable.
+	 * @param bool         $location_confirmation Whether the customer confirmed their location.
+	 * @param bool         $has_valid_vat_number  Whether this is a validated B2B transaction.
+	 * @return void
+	 */
+	private function maybe_require_location_confirmation( $billing_country, $ip_country, $location_confirmation, $has_valid_vat_number ) {
+		$requires_confirmation =
+			'yes' === get_option( 'woocommerce_eu_vat_number_validate_ip', 'no' ) &&
+			'yes' !== get_option( 'woocommerce_eu_vat_number_b2b', 'no' ) &&
+			WC()->cart &&
+			WC_EU_VAT_Number::cart_has_digital_goods() &&
+			WC_EU_VAT_Number::is_self_declaration_required( $ip_country, $billing_country ) &&
+			! $has_valid_vat_number;
+
+		// Remove a location error left by an earlier attempt before deciding the current request.
+		wc_eu_vat_clear_tagged_error_notices_from_session();
+
+		if ( ! $requires_confirmation || $location_confirmation ) {
+			return;
+		}
+
+		/**
+		 * Filters the self declared IP address.
+		 *
+		 * @since 2.1.10
+		 */
+		$ip_address = apply_filters( 'wc_eu_vat_self_declared_ip_address', WC_Geolocation::get_ip_address() );
+
+		wc_add_notice(
+			sprintf(
+				/* translators: 1: IP address, 2: billing country. */
+				__( 'Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below.', 'woocommerce-eu-vat-number' ),
+				$ip_address,
+				$billing_country
+			),
+			'error',
+			wc_eu_vat_notice_data()
+		);
 	}
 
 	/**

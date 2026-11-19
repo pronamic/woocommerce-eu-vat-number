@@ -2,14 +2,14 @@
 # This file is distributed under the GNU General Public License v3.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce EU VAT Number 3.2.3\n"
+"Project-Id-Version: WooCommerce EU VAT Number 3.2.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/target-repo\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-11T07:13:50+00:00\n"
+"POT-Creation-Date: 2026-11-17T13:29:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: woocommerce-eu-vat-number\n"
@@ -45,7 +45,7 @@ msgstr ""
 #: includes/class-wc-eu-vat-admin.php:480
 #: includes/class-wc-eu-vat-admin.php:498
 #: includes/class-wc-eu-vat-admin.php:505
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:552
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:607
 #: includes/class-wc-eu-vat-my-account.php:135
 #: includes/class-wc-eu-vat-my-account.php:154
 #: includes/class-wc-eu-vat-my-account.php:176
@@ -117,7 +117,7 @@ msgid "(self-declared)"
 msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:432
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:554
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:609
 #: includes/class-wc-eu-vat-my-account.php:242
 #: includes/class-wc-eu-vat-number.php:1505
 #: includes/class-wc-eu-vat-number.php:1524
@@ -125,7 +125,7 @@ msgid "billing"
 msgstr ""
 
 #: includes/class-wc-eu-vat-admin.php:436
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:554
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:609
 #: includes/class-wc-eu-vat-my-account.php:242
 #: includes/class-wc-eu-vat-number.php:1505
 #: includes/class-wc-eu-vat-number.php:1524
@@ -181,24 +181,32 @@ msgstr ""
 msgid "WC EU VAT Number: Failed to register script %1$s: %2$s"
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:128
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:126
 msgid "Invalid VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:193
+#. translators: 1: IP address, 2: billing country.
+#. translators: 1: Ip Address.
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:216
+#: includes/class-wc-eu-vat-number.php:1546
+#, php-format
+msgid "Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below."
+msgstr ""
+
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:248
 msgid "Location confirmation."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:198
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:253
 msgid "VAT number."
 msgstr ""
 
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:215
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:270
 msgid "VAT Data"
 msgstr ""
 
 #. translators: 1: VAT number field label, 2: VAT Number, 3: Address type, 4: Country
-#: includes/class-wc-eu-vat-extend-store-endpoint.php:551
+#: includes/class-wc-eu-vat-extend-store-endpoint.php:606
 #: includes/class-wc-eu-vat-number.php:1502
 #, php-format
 msgid "You have entered an invalid %1$s (%2$s) for your %3$s country (%4$s)."
@@ -299,12 +307,6 @@ msgstr ""
 #: includes/class-wc-eu-vat-number.php:1522
 #, php-format
 msgid "%1$s is a required field for your %2$s country (%3$s)."
-msgstr ""
-
-#. translators: 1: Ip Address.
-#: includes/class-wc-eu-vat-number.php:1546
-#, php-format
-msgid "Your IP Address (%1$s) does not match your billing country (%2$s). European VAT laws require your IP address to match your billing country when purchasing digital goods in the EU. Please confirm you are located within your billing country using the checkbox below."
 msgstr ""
 
 #: includes/class-wc-eu-vat-number.php:1564
@@ -510,15 +512,15 @@ msgstr ""
 msgid "EU VAT reports are incompatible with the %1$sWooCommerce data storage features%3$s enabled on your store. Please enable %2$stable synchronization%3$s if you wish to use EU VAT reports."
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:129
+#: includes/class-wc-eu-vat-reports.php:128
 msgid "EC Sales List"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:135
+#: includes/class-wc-eu-vat-reports.php:134
 msgid "EU VAT by state"
 msgstr ""
 
-#: includes/class-wc-eu-vat-reports.php:141
+#: includes/class-wc-eu-vat-reports.php:140
 msgid "Non EU Sales"
 msgstr ""
 
